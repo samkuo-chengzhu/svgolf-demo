@@ -1,0 +1,2096 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>旭陽高爾夫 × LINE Bot 會員 × 折價券系統｜球場端</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --green-dark: #0D3B22;
+  --green-mid: #1A5C35;
+  --green-light: #2E8B57;
+  --green-pale: #E8F4ED;
+  --gold: #C9A84C;
+  --gold-light: #F5E9CB;
+  --line-green: #06C755;
+  --line-bg: #B9C5D0;
+  --cream: #F8F4EE;
+  --text-dark: #1A1A1A;
+  --text-mid: #4A5568;
+  --text-light: #888;
+  --border: #E2E8F0;
+}
+
+body {
+  font-family: -apple-system, 'PingFang TC', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+  background: var(--green-dark);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 12px 40px;
+}
+
+/* ── Header ── */
+.brand-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.brand-header .eyebrow {
+  color: var(--gold);
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.brand-header h1 {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.brand-header .subtitle {
+  color: rgba(255,255,255,0.5);
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+/* ── Mode toggle ── */
+.mode-bar {
+  display: flex;
+  border: 1.5px solid rgba(255,255,255,0.42);
+  background: rgba(255,255,255,0.06);
+  border-radius: 30px;
+  overflow: hidden;
+  margin-bottom: 22px;
+  box-shadow: 0 3px 14px rgba(0,0,0,0.18);
+}
+.mode-btn {
+  padding: 10px 24px;
+  font-size: 12.5px;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.78);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  transition: all 0.25s;
+}
+.mode-btn.active { background: white; color: var(--green-dark); border-radius: 30px; }
+body.admin-mode .mode-bar {
+  border-color: rgba(0,0,0,0.18);
+  background: rgba(0,0,0,0.03);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+/* ── Phone frame ── */
+.phone-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 360px;
+  position: relative;
+}
+.phone {
+  width: 320px;
+  background: #111;
+  border-radius: 44px;
+  padding: 10px;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.08),
+    inset 0 0 0 1px rgba(255,255,255,0.04),
+    0 32px 64px rgba(0,0,0,0.5);
+  position: relative;
+}
+.phone-screen {
+  border-radius: 36px;
+  overflow: hidden;
+  background: #000;
+}
+
+/* Fake notch / status bar */
+.status-bar {
+  background: #00B900;
+  padding: 18px 14px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: white;
+}
+.status-bar .notch-area {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90px;
+  height: 22px;
+  background: #111;
+  border-radius: 0 0 16px 16px;
+  z-index: 5;
+}
+
+/* LINE Header */
+.line-header {
+  background: #00B900;
+  padding: 6px 14px 12px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.line-avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.line-name { color: white; font-size: 13px; font-weight: 600; }
+.line-sub { color: rgba(255,255,255,0.75); font-size: 9px; margin-top: 1px; }
+.line-icons { margin-left: auto; display: flex; gap: 14px; color: white; font-size: 15px; }
+
+/* Chat area */
+.chat {
+  background: var(--line-bg);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-height: 380px;
+}
+
+/* Date divider */
+.date-div {
+  text-align: center;
+  font-size: 9px;
+  color: rgba(0,0,0,0.4);
+  background: rgba(255,255,255,0.45);
+  border-radius: 10px;
+  padding: 2px 8px;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+/* Message rows */
+.msg-row { display: flex; gap: 5px; align-items: flex-end; }
+.msg-row.user { justify-content: flex-end; }
+.msg-row.bot { align-items: flex-start; }
+.b-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; flex-shrink: 0;
+}
+.bubble {
+  max-width: 200px;
+  border-radius: 16px;
+  padding: 8px 11px;
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+.bubble.bot {
+  background: white;
+  color: var(--text-dark);
+  border-radius: 3px 16px 16px 16px;
+}
+.bubble.user {
+  background: var(--line-green);
+  color: white;
+  border-radius: 16px 16px 3px 16px;
+}
+
+/* Flex Cards */
+.card-wrap { display: flex; gap: 5px; align-items: flex-start; }
+.card-sp { width: 26px; flex-shrink: 0; }
+
+.flex-card {
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  max-width: 210px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+.fc-head {
+  background: var(--green-mid);
+  padding: 8px 10px;
+  display: flex; align-items: center; gap: 5px;
+  color: white; font-size: 11px; font-weight: 600;
+}
+.fc-body { padding: 8px 10px; }
+
+/* Session list */
+.sess-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 0;
+  border-bottom: 0.5px solid var(--border);
+}
+.sess-row:last-child { border-bottom: none; }
+.sess-info { flex: 1; }
+.sess-date { font-size: 11px; font-weight: 600; color: var(--text-dark); }
+.sess-time { font-size: 9px; color: var(--text-light); }
+.badge {
+  font-size: 9px;
+  padding: 2px 5px;
+  border-radius: 8px;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.badge.ok { background: var(--green-pale); color: var(--green-mid); }
+.badge.low { background: #FEF0E8; color: #B85C10; }
+.fc-btn {
+  background: var(--line-green);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-size: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+/* Calendar card */
+.cal-card {
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  max-width: 248px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.cal-head {
+  background: var(--green-mid);
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.cal-month { color: white; font-size: 11px; font-weight: 600; }
+.cal-nav {
+  color: rgba(255,255,255,0.55);
+  font-size: 13px;
+  padding: 0 5px;
+  cursor: pointer;
+  user-select: none;
+}
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 6px 4px 2px;
+}
+.cal-weekdays span {
+  font-size: 8px;
+  color: var(--text-light);
+  text-align: center;
+  padding: 3px 0;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.cal-weekdays span.we { color: var(--green-mid); }
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  padding: 0 4px 2px;
+}
+.cal-day {
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 4px;
+  padding: 3px 0 4px;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 30px;
+  cursor: default;
+  transition: all 0.15s;
+}
+.cal-day.empty { visibility: hidden; pointer-events: none; }
+.cal-day .d-num {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dark);
+  line-height: 1;
+}
+.cal-day.we .d-num { color: var(--green-mid); }
+.cal-day .d-slots {
+  font-size: 7px;
+  color: var(--green-mid);
+  margin-top: 2px;
+  line-height: 1;
+  font-weight: 500;
+  white-space: nowrap;
+  letter-spacing: -0.2px;
+}
+.cal-day .d-none {
+  font-size: 8px;
+  color: #d4d4d4;
+  margin-top: 2px;
+  line-height: 1;
+}
+.cal-day.has { cursor: pointer; }
+.cal-day.has:hover, .cal-day.has:active { background: var(--green-pale); }
+.cal-day.target {
+  background: var(--green-pale);
+  border-color: var(--green-mid);
+  animation: pulseDay 1.8s ease-in-out infinite;
+}
+@keyframes pulseDay {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(46, 139, 87, 0.5); }
+  50% { box-shadow: 0 0 0 5px rgba(46, 139, 87, 0); }
+}
+.cal-foot {
+  text-align: center;
+  font-size: 9px;
+  color: var(--text-light);
+  padding: 5px 8px 8px;
+  border-top: 0.5px solid var(--border);
+  margin: 2px 8px 0;
+}
+
+/* Form card */
+.form-card { background: white; border-radius: 10px; overflow: hidden; max-width: 210px; }
+.form-head { background: var(--green-mid); padding: 7px 10px; }
+.form-head p { color: white; font-size: 11px; font-weight: 600; }
+.form-head small { color: rgba(255,255,255,0.8); font-size: 9px; }
+.form-body { padding: 9px 10px; display: flex; flex-direction: column; gap: 7px; }
+.f-label { font-size: 9px; color: var(--text-light); margin-bottom: 1px; }
+.f-val { font-size: 11px; font-weight: 500; color: var(--text-dark); }
+.f-input {
+  width: 100%;
+  border: 0.5px solid var(--border);
+  border-radius: 5px;
+  padding: 4px 7px;
+  font-size: 11px;
+  font-family: inherit;
+  outline: none;
+}
+.pax-row { display: flex; gap: 4px; }
+.pax-btn {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: white;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.pax-btn.sel { background: var(--green-mid); color: white; border-color: var(--green-mid); }
+.deposit-preview {
+  background: var(--green-pale);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 10px;
+  color: var(--green-mid);
+}
+.fc-cta {
+  width: 100%;
+  background: var(--line-green);
+  color: white;
+  border: none;
+  border-radius: 7px;
+  padding: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  margin-top: 2px;
+}
+
+/* Deposit confirmation card */
+.dep-card { background: white; border-radius: 10px; overflow: hidden; max-width: 210px; }
+.dep-head { background: #C9853A; padding: 7px 10px; display: flex; align-items: center; gap: 5px; }
+.dep-head p { color: white; font-size: 11px; font-weight: 600; }
+.dep-body { padding: 10px; }
+.dep-row { display: flex; justify-content: space-between; font-size: 10px; padding: 3px 0; }
+.dep-row .k { color: var(--text-light); }
+.dep-row .v { font-weight: 500; color: var(--text-dark); }
+.dep-total {
+  border-top: 1.5px solid var(--green-mid);
+  margin-top: 7px;
+  padding-top: 7px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.dep-total .tl { font-size: 11px; font-weight: 600; color: var(--text-dark); }
+.dep-total .ta { font-size: 20px; font-weight: 700; color: var(--green-mid); }
+.cancel-note { font-size: 9px; color: var(--text-light); margin-top: 5px; line-height: 1.4; }
+.lp-btn {
+  width: 100%;
+  background: #00B900;
+  color: white;
+  border: none;
+  border-radius: 7px;
+  padding: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 8px;
+  font-family: inherit;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+}
+.lp-logo {
+  background: white;
+  color: #00B900;
+  font-size: 8px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* Voucher */
+.voucher { background: white; border-radius: 10px; overflow: hidden; max-width: 210px; }
+.vc-top {
+  background: linear-gradient(135deg, var(--green-dark), var(--green-light));
+  padding: 12px 10px 10px;
+  text-align: center;
+}
+.vc-check {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.8);
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 14px;
+  margin: 0 auto 5px;
+}
+.vc-top h3 { color: white; font-size: 13px; font-weight: 700; }
+.vc-top p { color: rgba(255,255,255,0.8); font-size: 9px; margin-top: 1px; }
+.vc-mid { padding: 8px 10px; background: #FAFAFA; }
+.vc-row { display: flex; justify-content: space-between; font-size: 10px; padding: 2.5px 0; }
+.vc-row .k { color: var(--text-light); }
+.vc-row .v { font-weight: 600; color: var(--text-dark); }
+.vc-qr {
+  margin: 0 10px 8px;
+  background: white;
+  border-radius: 7px;
+  padding: 7px;
+  text-align: center;
+  border: 0.5px solid var(--border);
+}
+.vc-qr svg { display: block; margin: 0 auto 3px; }
+.vc-qr p { font-size: 8px; color: var(--text-light); }
+.vc-foot {
+  background: var(--green-mid);
+  padding: 6px 10px;
+  text-align: center;
+}
+.vc-foot p { color: rgba(255,255,255,0.8); font-size: 9px; }
+.vc-foot strong { color: white; font-size: 10px; }
+
+/* Input bar */
+.input-bar {
+  background: #F0F0F0;
+  padding: 5px 8px;
+  display: flex; align-items: center; gap: 5px;
+  border-top: 0.5px solid #ccc;
+}
+.input-mock {
+  flex: 1;
+  background: white;
+  border-radius: 18px;
+  padding: 5px 10px;
+  font-size: 11px;
+  color: #bbb;
+  border: 0.5px solid #ddd;
+}
+.send-circle {
+  width: 28px; height: 28px;
+  background: var(--line-green);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 12px;
+}
+
+/* Rich Menu */
+.rich-menu {
+  background: #F5F5F5;
+  border-top: 0.5px solid #ddd;
+  padding: 5px;
+}
+.rm-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 3px; }
+.rm-btn {
+  background: white;
+  border: 0.5px solid #E0E0E0;
+  border-radius: 7px;
+  padding: 9px 3px;
+  cursor: pointer;
+  font-size: 9px;
+  color: #444;
+  font-weight: 500;
+  line-height: 1.4;
+  text-align: center;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.rm-btn.hl { background: var(--green-pale); border-color: var(--green-mid); color: var(--green-mid); }
+.rm-icon { font-size: 14px; display: block; margin-bottom: 2px; }
+
+/* Step nav */
+.step-nav {
+  width: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding: 0 4px;
+}
+.dots { display: flex; gap: 5px; }
+.dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  transition: all 0.3s;
+}
+.dot.active { background: white; width: 20px; border-radius: 3px; }
+.dot.done { background: rgba(255,255,255,0.55); }
+.s-btn {
+  padding: 7px 16px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: inherit;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.s-btn.next { background: white; color: var(--green-dark); }
+.s-btn.prev { background: rgba(255,255,255,0.12); color: white; }
+.s-btn:disabled { opacity: 0.3; pointer-events: none; }
+
+/* Narration */
+.narration {
+  width: 320px;
+  margin-top: 12px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 12px 15px;
+  border-left: 3px solid var(--gold);
+}
+.narr-tag { color: var(--gold); font-size: 9px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 3px; }
+.narr-title { color: white; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.narr-desc { color: rgba(255,255,255,0.65); font-size: 11px; line-height: 1.6; }
+
+/* ── Admin Panel (desktop dashboard) ── */
+.admin {
+  width: 100%;
+  max-width: 640px;
+  background: white;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 14px 38px rgba(0,0,0,0.18);
+  position: relative;
+}
+
+/* Mac-like browser chrome */
+.admin-chrome {
+  background: #E8E8E8;
+  padding: 9px 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 0.5px solid rgba(0,0,0,0.08);
+}
+.ac-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+.ac-dot.red { background: #FF5F57; }
+.ac-dot.yellow { background: #FEBC2E; }
+.ac-dot.green { background: #28C840; }
+.ac-url {
+  flex: 1;
+  background: white;
+  border-radius: 5px;
+  padding: 4px 14px;
+  font-size: 11px;
+  color: var(--text-mid);
+  text-align: center;
+  border: 0.5px solid rgba(0,0,0,0.08);
+  margin-left: 6px;
+}
+
+/* Admin body */
+.admin-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #F2EDE0;
+}
+
+.a-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.a-head {
+  background: var(--green-mid);
+  padding: 13px 18px;
+  display: flex; justify-content: space-between; align-items: flex-start;
+}
+.a-head-left .a-session { color: white; font-size: 15px; font-weight: 600; }
+.a-head-left .a-date { color: rgba(255,255,255,0.8); font-size: 11px; margin-top: 3px; }
+.a-badge-open {
+  background: rgba(255,255,255,0.2);
+  color: white;
+  font-size: 10px;
+  padding: 4px 11px;
+  border-radius: 11px;
+  font-weight: 500;
+}
+.a-stats { display: grid; grid-template-columns: repeat(4,1fr); }
+.a-stat {
+  padding: 14px 8px;
+  text-align: center;
+  border-right: 0.5px solid var(--border);
+}
+.a-stat:last-child { border-right: none; }
+.a-stat-num { font-size: 22px; font-weight: 700; color: var(--green-mid); }
+.a-stat-num.amber { color: #C9853A; }
+.a-stat-num.blue { color: #2B6CB0; }
+.a-stat-label { font-size: 10px; color: var(--text-light); margin-top: 3px; }
+
+/* Deposit summary bar */
+.dep-summary {
+  background: white;
+  border-radius: 12px;
+  padding: 14px 20px;
+  display: flex; justify-content: space-between; align-items: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.dep-summary .ds-label { font-size: 13px; color: var(--text-mid); }
+.dep-summary .ds-amount { font-size: 22px; font-weight: 700; color: var(--green-mid); }
+
+/* Section label */
+.section-label {
+  color: var(--text-light);
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 4px 2px 0;
+  font-weight: 600;
+}
+
+/* Player table (desktop style) */
+.player-table {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.player-thead {
+  background: #FAF7F0;
+  padding: 10px 16px;
+  display: grid;
+  grid-template-columns: 32px 1fr 56px 110px 90px 64px;
+  gap: 10px;
+  align-items: center;
+  font-size: 9px;
+  color: var(--text-light);
+  letter-spacing: 1px;
+  font-weight: 600;
+  text-transform: uppercase;
+  border-bottom: 0.5px solid var(--border);
+}
+.player-card {
+  padding: 11px 16px;
+  display: grid;
+  grid-template-columns: 32px 1fr 56px 110px 90px 64px;
+  gap: 10px;
+  align-items: center;
+  background: white;
+  border-bottom: 0.5px solid var(--border);
+}
+.player-card:last-child { border-bottom: none; }
+.p-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--green-pale);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--green-mid);
+  flex-shrink: 0;
+}
+.p-name { font-size: 13px; font-weight: 600; color: var(--text-dark); }
+.p-pax { font-size: 12px; color: var(--text-mid); }
+.p-deposit { font-size: 12px; color: var(--text-mid); }
+.p-deposit.unpaid { color: #B85C10; font-weight: 500; }
+.p-status {
+  font-size: 10px;
+  padding: 4px 9px;
+  border-radius: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+  justify-self: start;
+}
+.s-done { background: var(--green-mid); color: white; }
+.s-paid { background: var(--green-pale); color: var(--green-mid); }
+.s-pending { background: #FEF0E8; color: #B85C10; }
+.ci-btn {
+  background: var(--line-green);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+/* Export button */
+.export-btn {
+  width: 100%;
+  background: white;
+  color: var(--green-mid);
+  border: 1.5px solid var(--green-mid);
+  border-radius: 10px;
+  padding: 13px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  transition: all 0.2s;
+}
+.export-btn:active { transform: scale(0.98); }
+
+.erp-note {
+  text-align: center;
+  color: var(--text-light);
+  font-size: 10px;
+}
+
+/* Fade in animation */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fadein { animation: fadeUp 0.3s ease forwards; }
+
+/* Scan CTA in admin */
+.scan-cta-btn {
+  width: 100%;
+  background: var(--green-mid);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 3px 10px rgba(46, 139, 87, 0.35);
+  transition: transform 0.1s;
+}
+.scan-cta-btn:active { transform: scale(0.98); }
+
+/* Scan modal */
+.scan-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.scan-overlay.hidden { display: none; }
+.scan-pane {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 320px;
+  overflow: hidden;
+  animation: slideUp 0.25s ease;
+}
+.scan-pane.hidden { display: none; }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.scan-head {
+  background: var(--green-mid);
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.scan-title { color: white; font-size: 14px; font-weight: 600; }
+.scan-close {
+  color: rgba(255,255,255,0.7);
+  font-size: 16px;
+  cursor: pointer;
+  user-select: none;
+  padding: 0 4px;
+}
+
+.scan-frame {
+  background: #111;
+  height: 220px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.vf-corners { width: 160px; height: 160px; position: relative; }
+.vfc {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--gold);
+}
+.vfc.tl { top: 0; left: 0; border-right: none; border-bottom: none; }
+.vfc.tr { top: 0; right: 0; border-left: none; border-bottom: none; }
+.vfc.bl { bottom: 0; left: 0; border-right: none; border-top: none; }
+.vfc.br { bottom: 0; right: 0; border-left: none; border-top: none; }
+.vf-laser {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  top: 0;
+  animation: laser 1.3s ease-in-out infinite;
+  box-shadow: 0 0 8px var(--gold);
+}
+@keyframes laser {
+  0%, 100% { top: 6%; }
+  50% { top: 86%; }
+}
+.scan-hint {
+  background: white;
+  padding: 14px 16px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-mid);
+  line-height: 1.6;
+}
+
+.detail-body {
+  padding: 18px 16px 14px;
+  text-align: center;
+}
+.dt-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--green-pale);
+  color: var(--green-mid);
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 8px;
+}
+.dt-name { font-size: 17px; font-weight: 700; color: var(--text-dark); }
+.dt-sub { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+.dt-rows {
+  margin-top: 14px;
+  text-align: left;
+  background: #FAFAFA;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.dt-row { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; }
+.dt-row .k { color: var(--text-light); }
+.dt-row .v { color: var(--text-dark); font-weight: 500; }
+.scan-cta-action {
+  width: calc(100% - 32px);
+  margin: 0 16px 16px;
+  background: var(--line-green);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.settle-body { padding: 16px 16px 6px; }
+.st-row { display: flex; justify-content: space-between; font-size: 12px; padding: 5px 0; }
+.st-row .k { color: var(--text-mid); }
+.st-row .v { color: var(--text-dark); font-weight: 500; }
+.st-row.balance {
+  border-top: 1.5px solid var(--green-mid);
+  margin-top: 6px;
+  padding-top: 10px;
+  align-items: baseline;
+}
+.st-row.balance .k { color: var(--text-dark); font-weight: 600; font-size: 13px; }
+.st-row.balance .v strong { color: var(--green-mid); font-size: 22px; }
+
+.pm-label {
+  font-size: 11px;
+  color: var(--text-light);
+  text-align: center;
+  margin: 12px 0 8px;
+}
+.pm-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  padding: 0 16px 16px;
+}
+.pm-btn {
+  border: 1px solid var(--border);
+  background: white;
+  border-radius: 10px;
+  padding: 10px 4px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.15s;
+  color: var(--text-dark);
+}
+.pm-btn:hover { border-color: var(--green-mid); background: var(--green-pale); }
+.pm-icon { font-size: 18px; }
+
+[data-pane="success"] {
+  padding: 32px 16px 28px;
+  text-align: center;
+}
+.success-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--green-mid);
+  color: white;
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+  box-shadow: 0 4px 16px rgba(46, 139, 87, 0.35);
+  animation: pop 0.4s ease;
+}
+@keyframes pop {
+  from { transform: scale(0); }
+  60% { transform: scale(1.15); }
+  to { transform: scale(1); }
+}
+.success-title { font-size: 18px; font-weight: 700; color: var(--green-dark); margin-bottom: 6px; }
+.success-name { font-size: 13px; color: var(--text-mid); }
+.success-amount { font-size: 22px; font-weight: 700; color: var(--green-mid); margin-top: 6px; }
+.success-method { font-size: 11px; color: var(--text-light); margin-top: 4px; }
+
+/* Admin mode — body theme switch */
+body { transition: background-color 0.35s ease; }
+body.admin-mode { background: #F2EDE0; }
+body.admin-mode .brand-header h1 { color: var(--green-dark); }
+body.admin-mode .brand-header .subtitle { color: rgba(0,0,0,0.5); }
+body.admin-mode .brand-header .eyebrow { color: #B8860B; }
+body.admin-mode .mode-bar { border-color: rgba(0,0,0,0.15); }
+body.admin-mode .mode-btn { color: rgba(0,0,0,0.55); }
+body.admin-mode .mode-btn.active { background: var(--green-mid); color: white; }
+body.admin-mode .narration {
+  background: white;
+  border-left-color: var(--green-mid);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+body.admin-mode .narr-tag { color: var(--green-mid); }
+body.admin-mode .narr-title { color: var(--green-dark); }
+body.admin-mode .narr-desc { color: var(--text-mid); }
+body.admin-mode .section-label { color: var(--text-light); }
+body.admin-mode .erp-note { color: rgba(0,0,0,0.45); }
+
+/* Admin top dashboard bar */
+.dash-bar {
+  background: linear-gradient(135deg, #1A5C35, #0D3B22);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(13, 59, 34, 0.18);
+}
+.dash-icon {
+  font-size: 16px;
+  background: rgba(255,255,255,0.15);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.dash-text { flex: 1; min-width: 0; }
+.dash-title { color: white; font-size: 13px; font-weight: 700; letter-spacing: 0.3px; }
+.dash-sub { color: rgba(255,255,255,0.6); font-size: 9px; margin-top: 1px; }
+.dash-status {
+  font-size: 9px;
+  color: #6FE198;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Annotation callouts */
+.callouts-side {
+  position: absolute;
+  top: 12px;
+  width: 210px;
+  pointer-events: none;
+  z-index: 10;
+}
+.callouts-side.left {
+  right: 100%;
+  margin-right: 40px;
+}
+.callouts-side.right {
+  left: 100%;
+  margin-left: 40px;
+}
+.callout {
+  position: absolute;
+  width: 100%;
+  background: rgba(255,255,255,0.97);
+  color: var(--green-dark);
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 11px;
+  line-height: 1.55;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  font-weight: 500;
+  pointer-events: auto;
+  white-space: pre-line;
+  animation: calloutIn 0.4s ease;
+}
+.callouts-side.right .callout { border-left: 3px solid var(--gold); }
+.callouts-side.left .callout {
+  border-right: 3px solid var(--gold);
+  text-align: right;
+}
+.callout::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  width: 34px;
+  border-top: 1.5px dashed var(--gold);
+}
+.callouts-side.right .callout::before { left: -36px; }
+.callouts-side.left .callout::before { right: -36px; }
+.callout::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.3);
+}
+.callouts-side.right .callout::after { left: -42px; }
+.callouts-side.left .callout::after { right: -42px; }
+body.admin-mode .callout {
+  background: white;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+}
+@keyframes calloutIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+@media (max-width: 950px) {
+  .callouts-side {
+    position: static;
+    width: 320px;
+    margin: 14px auto 0;
+  }
+  .callouts-side .callout {
+    position: static;
+    width: 100%;
+    margin-bottom: 8px;
+    text-align: left !important;
+    border-left: 3px solid var(--gold) !important;
+    border-right: none !important;
+  }
+  .callout::before, .callout::after { display: none; }
+}
+
+/* ── Step 5 hand-off CTA in narration ── */
+.narr-cta {
+  margin-top: 12px;
+  background: var(--gold);
+  color: var(--green-dark);
+  border: none;
+  border-radius: 8px;
+  padding: 11px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  width: 100%;
+  letter-spacing: 0.3px;
+  transition: transform 0.1s, background 0.15s;
+  box-shadow: 0 3px 10px rgba(201, 168, 76, 0.25);
+}
+.narr-cta:hover { background: #D9B85F; }
+.narr-cta:active { transform: scale(0.98); }
+.narr-cta.hidden { display: none; }
+
+/* ── Admin tabs ── */
+.admin-tabs {
+  display: flex;
+  background: white;
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.admin-tab {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-mid);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.admin-tab:hover { background: var(--green-pale); }
+.admin-tab.active {
+  background: var(--green-mid);
+  color: white;
+  box-shadow: 0 2px 8px rgba(46, 139, 87, 0.3);
+}
+
+.pane { display: flex; flex-direction: column; gap: 10px; }
+.pane.hidden { display: none; }
+
+/* ── Schedule pane ── */
+.sched-header {
+  background: linear-gradient(135deg, var(--gold-light), white);
+  border-radius: 12px;
+  padding: 14px 18px;
+  border-left: 3px solid var(--gold);
+}
+.sched-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--green-dark);
+  letter-spacing: 0.3px;
+}
+.sched-sub {
+  font-size: 12px;
+  color: var(--text-mid);
+  margin-top: 3px;
+}
+.sched-calendar-wrap {
+  background: white;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.sched-cal {
+  width: 280px;
+  max-width: 100%;
+  border-radius: 8px;
+  box-shadow: none;
+  border: 0.5px solid var(--border);
+}
+
+.sched-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.sched-card-head {
+  background: var(--green-mid);
+  padding: 13px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sched-card-title { color: white; font-size: 15px; font-weight: 700; }
+.sched-card-sub { color: rgba(255,255,255,0.75); font-size: 11px; margin-top: 2px; }
+.sched-edit-tag {
+  background: var(--gold);
+  color: var(--green-dark);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 11px;
+  letter-spacing: 0.5px;
+}
+
+.slot-block {
+  padding: 14px 18px;
+  border-bottom: 0.5px solid var(--border);
+}
+.slot-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--green-dark);
+  margin-bottom: 10px;
+}
+.slot-rows { display: flex; flex-direction: column; gap: 8px; }
+.slot-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sr-k { color: var(--text-light); flex-shrink: 0; min-width: 76px; }
+.sr-v { color: var(--text-dark); font-weight: 600; }
+.sr-unit { color: var(--text-light); font-weight: 400; font-size: 11px; }
+.sr-control { display: flex; align-items: center; gap: 8px; }
+.qty-btn {
+  width: 26px; height: 26px;
+  border: 1px solid var(--border);
+  background: white;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--green-mid);
+  font-weight: 700;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.qty-btn:hover { background: var(--green-pale); border-color: var(--green-mid); }
+.qty-btn:active { transform: scale(0.92); }
+.qty-val {
+  min-width: 24px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+.slot-tag {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 9px;
+  font-weight: 600;
+  margin-left: 4px;
+}
+.slot-tag.full { background: var(--green-pale); color: var(--green-mid); }
+.slot-tag.low { background: #FEF0E8; color: #B85C10; }
+
+.month-rules {
+  padding: 14px 18px;
+  background: #FAF7F0;
+  border-bottom: 0.5px solid var(--border);
+}
+.month-rules-label {
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-light);
+  letter-spacing: 1.5px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+.rule-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  padding: 5px 0;
+}
+.rule-row.policy-row { display: block; padding: 8px 0 0; }
+.rule-k { color: var(--text-mid); }
+.rule-v { color: var(--text-dark); font-weight: 600; }
+.check-on { color: var(--green-mid); font-size: 14px; margin-right: 4px; }
+.own-tag {
+  background: var(--gold);
+  color: var(--green-dark);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 7px;
+  margin-left: 6px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+.policy-text {
+  background: white;
+  border: 0.5px solid var(--border);
+  border-radius: 7px;
+  padding: 9px 11px;
+  font-size: 11.5px;
+  color: var(--text-mid);
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  line-height: 1.5;
+}
+.edit-link {
+  background: white;
+  color: var(--green-mid);
+  border: 1px solid var(--green-mid);
+  border-radius: 6px;
+  padding: 4px 11px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.edit-link:hover { background: var(--green-pale); }
+.save-btn {
+  width: calc(100% - 36px);
+  margin: 14px 18px 18px;
+  background: var(--green-mid);
+  color: white;
+  border: none;
+  border-radius: 9px;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 3px 10px rgba(46, 139, 87, 0.25);
+  transition: transform 0.1s;
+}
+.save-btn:active { transform: scale(0.98); }
+
+/* ── Coupon admin ── */
+.aud-row {
+  display: flex; align-items: center;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  background: white;
+  transition: all 0.15s;
+}
+.aud-row:hover { border-color: var(--green-mid); background: var(--green-pale); }
+.aud-row.sel { border-color: var(--green-mid); background: var(--green-pale); }
+.aud-row input { margin-right: 10px; accent-color: var(--green-mid); }
+.aud-name { flex: 1; font-size: 12px; color: var(--text-dark); font-weight: 500; }
+.aud-count { font-size: 11px; color: var(--text-light); }
+
+.cp-input {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 9px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  background: white;
+}
+.cp-input:focus { border-color: var(--green-mid); }
+.cp-input-name { flex: 1; max-width: 240px; }
+.cp-input-num { width: 70px; text-align: center; font-weight: 700; color: var(--green-mid); }
+.cp-input-date { width: 110px; }
+
+.cp-preview {
+  background: var(--line-bg);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+.cp-preview-bubble {
+  background: white;
+  border-radius: 3px 14px 14px 14px;
+  padding: 10px 12px;
+  max-width: 80%;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--text-dark);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.cp-preview-card {
+  background: linear-gradient(135deg, #C9853A, var(--gold));
+  color: white;
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-align: center;
+  min-width: 180px;
+  box-shadow: 0 2px 8px rgba(201, 168, 76, 0.3);
+}
+.cp-preview-amt { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.1; }
+.cp-preview-name { font-size: 13px; font-weight: 600; margin: 3px 0 1px; }
+.cp-preview-exp { font-size: 10px; opacity: 0.92; }
+
+.cp-history-row {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  gap: 12px;
+  padding: 12px 16px;
+  align-items: center;
+  border-bottom: 0.5px solid var(--border);
+  background: white;
+}
+.cp-history-row:last-child { border-bottom: none; }
+.ch-icon {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--gold-light);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.ch-name { font-size: 13px; font-weight: 600; color: var(--text-dark); }
+.ch-meta { font-size: 10.5px; color: var(--text-light); margin-top: 2px; }
+.ch-stats { display: flex; gap: 14px; }
+.ch-stat {
+  text-align: center;
+  display: flex; flex-direction: column;
+  min-width: 38px;
+}
+.ch-num { font-size: 14px; font-weight: 700; color: var(--text-dark); line-height: 1.1; }
+.ch-num.green { color: var(--green-mid); }
+.ch-num.amber { color: #C9853A; }
+.ch-lbl { font-size: 9px; color: var(--text-light); margin-top: 2px; letter-spacing: 0.5px; }
+
+/* Utility */
+.hidden { display: none; }
+.screen { display: flex; flex-direction: column; align-items: center; width: 100%; }
+</style>
+</head>
+<body class="admin-mode">
+
+<!-- Brand header -->
+<div class="brand-header">
+  <p class="eyebrow">LINE Bot 會員 × 折價券系統 · 提案展示 Demo</p>
+  <h1>旭陽高爾夫球場</h1>
+  <p class="subtitle">Sunshine Valley Golf Club × 會員推播 × 折價券自動發送</p>
+</div>
+
+<!-- Mode toggle (links to two separate pages) -->
+<div class="mode-bar">
+  <a class="mode-btn" href="./">📱 球友端</a>
+  <a class="mode-btn active" href="admin.html">🖥 球場端</a>
+</div>
+
+<div class="screen" id="screen-admin">
+  <div class="admin">
+    <!-- Mac-like window chrome -->
+    <div class="admin-chrome">
+      <span class="ac-dot red"></span>
+      <span class="ac-dot yellow"></span>
+      <span class="ac-dot green"></span>
+      <div class="ac-url">svgolf.app/admin/coupons</div>
+    </div>
+
+    <div class="admin-body">
+      <!-- Admin top bar -->
+      <div class="dash-bar">
+        <span class="dash-icon">🖥</span>
+        <div class="dash-text">
+          <div class="dash-title">旭陽 · 管理後台</div>
+          <div class="dash-sub">櫃台 · 王小明 值班中</div>
+        </div>
+        <span class="dash-status">● 連線中</span>
+      </div>
+
+      <!-- Admin tabs -->
+      <div class="admin-tabs">
+        <button class="admin-tab active" id="tab-coupons" onclick="setAdminTab('coupons')">🎟️ 折價券</button>
+        <button class="admin-tab" id="tab-schedule" onclick="setAdminTab('schedule')">📅 場次設定</button>
+        <button class="admin-tab" id="tab-today" onclick="setAdminTab('today')">📋 今日預約</button>
+      </div>
+
+      <!-- ── Coupon pane (折價券) ── -->
+      <div class="pane" id="pane-coupons">
+        <div class="sched-header">
+          <h3 class="sched-title">🎟️ 折價券發送 × 會員推播</h3>
+          <p class="sched-sub">把折價券從紙本搬到 LINE — 自動發送、即時追蹤、回流率一目了然</p>
+        </div>
+
+        <div class="a-card">
+          <div class="a-stats">
+            <div class="a-stat">
+              <div class="a-stat-num">1,580</div>
+              <div class="a-stat-label">本月累計發出</div>
+            </div>
+            <div class="a-stat">
+              <div class="a-stat-num">385</div>
+              <div class="a-stat-label">已使用</div>
+            </div>
+            <div class="a-stat">
+              <div class="a-stat-num amber">872</div>
+              <div class="a-stat-label">未使用</div>
+            </div>
+            <div class="a-stat">
+              <div class="a-stat-num blue">24%</div>
+              <div class="a-stat-label">回流率</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sched-card">
+          <div class="sched-card-head">
+            <div>
+              <div class="sched-card-title">📨 發送新折價券</div>
+              <div class="sched-card-sub">選對象 → 設面額 → 預覽 → 發送</div>
+            </div>
+            <span class="sched-edit-tag">編輯中</span>
+          </div>
+
+          <div class="slot-block">
+            <div class="slot-head">① 發送對象</div>
+            <div class="slot-rows">
+              <label class="aud-row sel"><input type="radio" name="aud" checked><span class="aud-name">上月來打過球的球友</span><span class="aud-count">47 人</span></label>
+              <label class="aud-row"><input type="radio" name="aud"><span class="aud-name">全部會員</span><span class="aud-count">250 人</span></label>
+              <label class="aud-row"><input type="radio" name="aud"><span class="aud-name">60 天未到場（流失預警）</span><span class="aud-count">89 人</span></label>
+              <label class="aud-row"><input type="radio" name="aud"><span class="aud-name">自選名單上傳</span><span class="aud-count">手動</span></label>
+            </div>
+          </div>
+
+          <div class="slot-block">
+            <div class="slot-head">② 折價券設定</div>
+            <div class="slot-rows">
+              <div class="slot-row">
+                <span class="sr-k">名稱</span>
+                <input class="cp-input cp-input-name" type="text" value="母親節限定折價券" />
+              </div>
+              <div class="slot-row">
+                <span class="sr-k">面額</span>
+                <span class="sr-v">NT$ <input class="cp-input cp-input-num" type="text" value="500" /> <span class="sr-unit">/ 張</span></span>
+              </div>
+              <div class="slot-row">
+                <span class="sr-k">有效期</span>
+                <input class="cp-input cp-input-date" type="text" value="2026/05/15" />
+              </div>
+              <div class="slot-row">
+                <span class="sr-k">適用條件</span>
+                <span class="sr-v">假日擊球費抵扣</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="slot-block">
+            <div class="slot-head">③ LINE 推播預覽</div>
+            <div class="cp-preview">
+              <div class="cp-preview-bubble">親愛的會員您好 🌷<br>母親節即將到來，旭陽特別準備了 NT$500 折價券給您，5/15 前到場使用。祝您母親節快樂！</div>
+              <div class="cp-preview-card">
+                <div class="cp-preview-amt">NT$500</div>
+                <div class="cp-preview-name">母親節限定折價券</div>
+                <div class="cp-preview-exp">至 2026/05/15</div>
+              </div>
+            </div>
+          </div>
+
+          <button class="save-btn">📤 確認發送（47 位會員）</button>
+        </div>
+
+        <div class="section-label">最近發送紀錄</div>
+        <div class="player-table">
+          <div class="cp-history-row">
+            <div class="ch-icon">🌷</div>
+            <div>
+              <div class="ch-name">母親節限定折價券 NT$500</div>
+              <div class="ch-meta">2026/05/01 發送 · 上月打過球（47 人）</div>
+            </div>
+            <div class="ch-stats">
+              <div class="ch-stat"><span class="ch-num">47</span><span class="ch-lbl">寄出</span></div>
+              <div class="ch-stat"><span class="ch-num green">12</span><span class="ch-lbl">已用</span></div>
+              <div class="ch-stat"><span class="ch-num amber">35</span><span class="ch-lbl">待用</span></div>
+            </div>
+          </div>
+          <div class="cp-history-row">
+            <div class="ch-icon">🎁</div>
+            <div>
+              <div class="ch-name">新會員開戶券 NT$300（持續發送）</div>
+              <div class="ch-meta">每位新加入 LINE 自動發送 · 累計 1,247 張</div>
+            </div>
+            <div class="ch-stats">
+              <div class="ch-stat"><span class="ch-num">1,247</span><span class="ch-lbl">寄出</span></div>
+              <div class="ch-stat"><span class="ch-num green">328</span><span class="ch-lbl">已用</span></div>
+              <div class="ch-stat"><span class="ch-num amber">891</span><span class="ch-lbl">待用</span></div>
+            </div>
+          </div>
+          <div class="cp-history-row">
+            <div class="ch-icon">☀️</div>
+            <div>
+              <div class="ch-name">平日午茶兌換券（5月限定）</div>
+              <div class="ch-meta">2026/04/28 發送 · 全部會員（250 人）</div>
+            </div>
+            <div class="ch-stats">
+              <div class="ch-stat"><span class="ch-num">250</span><span class="ch-lbl">寄出</span></div>
+              <div class="ch-stat"><span class="ch-num green">45</span><span class="ch-lbl">已用</span></div>
+              <div class="ch-stat"><span class="ch-num amber">205</span><span class="ch-lbl">待用</span></div>
+            </div>
+          </div>
+        </div>
+
+        <button class="export-btn">
+          <span>📊</span> 匯出折價券明細 — Excel
+        </button>
+
+        <div class="narration" style="width:100%;">
+          <div class="narr-tag">球場老闆視角</div>
+          <div class="narr-title">把紙本折價券搬到 LINE</div>
+          <div class="narr-desc">過去發紙券：印刷成本、櫃台抄名單、客人忘了帶、不知道誰用了。現在：選對象 → 一鍵推播 → 客人手機就有 → 來店掃條碼即用 → 後台立刻看回流率。新會員加 LINE 自動發歡迎券，櫃台連出手都不用。</div>
+        </div>
+      </div>
+
+      <!-- ── Schedule pane (場次設定) ── -->
+      <div class="pane hidden" id="pane-schedule">
+        <div class="sched-header">
+          <h3 class="sched-title">📅 場次設定</h3>
+          <p class="sched-sub">您決定每天開放幾組、會員/散客分別收多少、訂金與取消規則——系統只執行您的規則</p>
+        </div>
+
+        <div class="sched-calendar-wrap">
+          <div class="cal-card sched-cal">
+            <div class="cal-head">
+              <span class="cal-nav">‹</span>
+              <span class="cal-month">2026 年 5 月</span>
+              <span class="cal-nav">›</span>
+            </div>
+            <div class="cal-weekdays">
+              <span class="we">日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span class="we">六</span>
+            </div>
+            <div class="cal-grid" id="sched-cal-grid"></div>
+            <div class="cal-foot">點選日期編輯場次（早 = 早場組數 · 午 = 午場組數）</div>
+          </div>
+        </div>
+
+        <div class="sched-card">
+          <div class="sched-card-head">
+            <div>
+              <div class="sched-card-title">5月2日（六）</div>
+              <div class="sched-card-sub">假日 · 大草坪場</div>
+            </div>
+            <span class="sched-edit-tag">編輯中</span>
+          </div>
+
+          <div class="slot-block">
+            <div class="slot-head">⛅ 早場 · 07:00 開球</div>
+            <div class="slot-rows">
+              <div class="slot-row">
+                <span class="sr-k">開放組數</span>
+                <div class="sr-control">
+                  <button class="qty-btn" onclick="bumpQty('am',-1)">−</button>
+                  <span class="qty-val" id="qty-am">5</span>
+                  <button class="qty-btn" onclick="bumpQty('am',1)">+</button>
+                  <span class="slot-tag full">🟢 已額滿</span>
+                </div>
+              </div>
+              <div class="slot-row">
+                <span class="sr-k">會員價</span>
+                <span class="sr-v">NT$ 3,000 <span class="sr-unit">/ 人</span></span>
+              </div>
+              <div class="slot-row">
+                <span class="sr-k">散客價</span>
+                <span class="sr-v">NT$ 3,500 <span class="sr-unit">/ 人</span></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="slot-block">
+            <div class="slot-head">☀️ 午場 · 12:30 開球</div>
+            <div class="slot-rows">
+              <div class="slot-row">
+                <span class="sr-k">開放組數</span>
+                <div class="sr-control">
+                  <button class="qty-btn" onclick="bumpQty('pm',-1)">−</button>
+                  <span class="qty-val" id="qty-pm">3</span>
+                  <button class="qty-btn" onclick="bumpQty('pm',1)">+</button>
+                  <span class="slot-tag low">剩 1 組</span>
+                </div>
+              </div>
+              <div class="slot-row">
+                <span class="sr-k">會員價</span>
+                <span class="sr-v">NT$ 2,800 <span class="sr-unit">/ 人</span></span>
+              </div>
+              <div class="slot-row">
+                <span class="sr-k">散客價</span>
+                <span class="sr-v">NT$ 3,200 <span class="sr-unit">/ 人</span></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="month-rules">
+            <div class="month-rules-label">─── 全月通用設定 ───</div>
+            <div class="rule-row">
+              <span class="rule-k">訂金</span>
+              <span class="rule-v">NT$ 2,000 <span class="sr-unit">/ 組（不分人頭）</span></span>
+            </div>
+            <div class="rule-row">
+              <span class="rule-k">額滿時</span>
+              <span class="rule-v"><span class="check-on">☑</span>自動關閉報名</span>
+            </div>
+            <div class="rule-row policy-row">
+              <span class="rule-k">取消規則 <span class="own-tag">您球場專屬</span></span>
+              <div class="policy-text">
+                <span>7 天前全退 · 3–6 天退 50% · 2 天內或未到場不退款</span>
+                <button class="edit-link">編輯</button>
+              </div>
+            </div>
+          </div>
+
+          <button class="save-btn">✓ 儲存設定</button>
+        </div>
+
+        <div class="narration" style="width:100%;">
+          <div class="narr-tag">球場老闆視角</div>
+          <div class="narr-title">您是控場的人</div>
+          <div class="narr-desc">每一天的早場/午場開幾組、會員與散客分別收多少、訂金多少、取消怎麼退——全部由您決定。系統只負責執行您的規則，不會把任何條件硬塞給您。設定完成後球友端會即時反映，組數滿了自動關閉報名。</div>
+        </div>
+      </div>
+
+      <!-- ── Today pane (今日預約 — existing content) ── -->
+      <div class="pane hidden" id="pane-today">
+      <!-- Session header -->
+      <div class="a-card">
+        <div class="a-head">
+          <div class="a-head-left">
+            <div class="a-session">⛳ 早場 18洞標準賽</div>
+            <div class="a-date">2026年5月2日（六） 07:00 開球</div>
+          </div>
+          <div class="a-badge-open">進行中</div>
+        </div>
+        <div class="a-stats">
+          <div class="a-stat">
+            <div class="a-stat-num" id="stat-total">12</div>
+            <div class="a-stat-label">總人數</div>
+          </div>
+          <div class="a-stat">
+            <div class="a-stat-num" id="stat-ci">7</div>
+            <div class="a-stat-label">已核銷</div>
+          </div>
+          <div class="a-stat">
+            <div class="a-stat-num amber" id="stat-paid">3</div>
+            <div class="a-stat-label">待到場</div>
+          </div>
+          <div class="a-stat">
+            <div class="a-stat-num blue" id="stat-pend">2</div>
+            <div class="a-stat-label">未付款</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Deposit total -->
+      <div class="dep-summary">
+        <span class="ds-label">💰 已收訂金總計</span>
+        <span class="ds-amount">NT$ 5,000</span>
+      </div>
+
+      <!-- Scan check-in CTA -->
+      <button class="scan-cta-btn" onclick="openScan()">
+        <span style="font-size:16px;">📷</span>
+        掃碼核銷 / 結帳
+      </button>
+
+      <div class="section-label">報名名單</div>
+
+      <!-- Player table -->
+      <div class="player-table">
+        <div class="player-thead">
+          <div></div>
+          <div>球友姓名</div>
+          <div>人數</div>
+          <div>訂金</div>
+          <div>狀態</div>
+          <div></div>
+        </div>
+        <div id="player-list"></div>
+      </div>
+
+      <!-- Export -->
+      <button class="export-btn" id="export-btn" onclick="doExport()">
+        <span>📊</span> 匯出 Excel — 匯入 ERP 系統
+      </button>
+      <div class="erp-note">格式：.xlsx · 含姓名、電話、場次、訂金金額、到場狀態</div>
+
+      <!-- Narration -->
+      <div class="narration" style="width:100%;">
+        <div class="narr-tag">管理端說明</div>
+        <div class="narr-title">球場工作人員視角</div>
+        <div class="narr-desc">櫃台或工作人員從電腦／平板登入後台，看到當日場次的即時報名概況。客人到場時開「📷 掃碼核銷」鏡頭對準客人 LINE 的 QR Code，訂金自動抵扣，餘額可選現金 / 信用卡 / LINE Pay 收款。當日結束後一鍵匯出 Excel 匯入 ERP。</div>
+      </div>
+      </div><!-- /pane-today -->
+    </div>
+
+    <!-- Admin callouts -->
+    <div class="callouts-side left" id="admin-callouts-left"></div>
+    <div class="callouts-side right" id="admin-callouts-right"></div>
+
+    <!-- Scan modal -->
+    <div class="scan-overlay hidden" id="scan-overlay" onclick="if(event.target===this)closeScan()">
+      <div class="scan-pane" data-pane="scan">
+        <div class="scan-head">
+          <span class="scan-title">📷 掃碼核銷</span>
+          <span class="scan-close" onclick="closeScan()">✕</span>
+        </div>
+        <div class="scan-frame">
+          <div class="vf-corners">
+            <div class="vfc tl"></div><div class="vfc tr"></div>
+            <div class="vfc bl"></div><div class="vfc br"></div>
+            <div class="vf-laser"></div>
+          </div>
+        </div>
+        <p class="scan-hint">請客人開啟 LINE → 我的預約<br>對準 QR Code 掃描中…</p>
+      </div>
+
+      <div class="scan-pane hidden" data-pane="detail">
+        <div class="scan-head">
+          <span class="scan-title">✓ 已掃描</span>
+          <span class="scan-close" onclick="closeScan()">✕</span>
+        </div>
+        <div class="detail-body">
+          <div class="dt-avatar">張</div>
+          <h3 class="dt-name">張偉強</h3>
+          <p class="dt-sub">5/2（六）早場 18洞 · 07:00 開球</p>
+          <div class="dt-rows">
+            <div class="dt-row"><span class="k">人數</span><span class="v">2 人</span></div>
+            <div class="dt-row"><span class="k">已付訂金</span><span class="v" style="color:var(--green-mid);">NT$2,000</span></div>
+            <div class="dt-row"><span class="k">訂單編號</span><span class="v" style="font-family:monospace;font-size:11px;">SG260502-0038</span></div>
+          </div>
+        </div>
+        <button class="scan-cta-action" onclick="advanceScan('settle')">確認核銷 → 進入結帳</button>
+      </div>
+
+      <div class="scan-pane hidden" data-pane="settle">
+        <div class="scan-head">
+          <span class="scan-title">💰 結帳</span>
+          <span class="scan-close" onclick="closeScan()">✕</span>
+        </div>
+        <div class="settle-body">
+          <div class="st-row"><span class="k">擊球費（假日）NT$3,500 × 2</span><span class="v">NT$7,000</span></div>
+          <div class="st-row"><span class="k">已付訂金抵扣（1 組）</span><span class="v" style="color:var(--green-mid);">−NT$2,000</span></div>
+          <div class="st-row balance">
+            <span class="k">應收餘額</span>
+            <span class="v"><strong>NT$5,000</strong></span>
+          </div>
+        </div>
+        <p class="pm-label">選擇付款方式</p>
+        <div class="pm-grid">
+          <button class="pm-btn" onclick="completeScanPayment('cash')"><span class="pm-icon">💵</span>現金</button>
+          <button class="pm-btn" onclick="completeScanPayment('card')"><span class="pm-icon">💳</span>信用卡</button>
+          <button class="pm-btn" onclick="completeScanPayment('linepay')"><span class="pm-icon">📱</span>LINE Pay</button>
+        </div>
+      </div>
+
+      <div class="scan-pane hidden" data-pane="success">
+        <div class="success-icon">✓</div>
+        <h3 class="success-title">結帳完成</h3>
+        <p class="success-name">張偉強 × 2人</p>
+        <p class="success-amount">NT$5,000</p>
+        <p class="success-method" id="success-method">現金</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ─── Data ─── */
+const players = [
+  { name:'林志明', init:'林', count:4, deposit:2000, status:'checkin' },
+  { name:'王建國', init:'王', count:2, deposit:2000, status:'checkin' },
+  { name:'陳美華', init:'陳', count:2, deposit:2000, status:'checkin' },
+  { name:'張偉強', init:'張', count:2, deposit:2000, status:'paid' },
+  { name:'劉明宏', init:'劉', count:2, deposit:2000, status:'paid' },
+  { name:'黃志豪', init:'黃', count:2, deposit: 0,   status:'pending' },
+];
+
+/* ─── Admin tab switch ─── */
+function setAdminTab(tab) {
+  const tabs = ['coupons', 'schedule', 'today'];
+  tabs.forEach(t => {
+    const isActive = t === tab;
+    document.getElementById('pane-' + t).classList.toggle('hidden', !isActive);
+    document.getElementById('tab-' + t).classList.toggle('active', isActive);
+  });
+  // Side annotations are positioned for the today pane only
+  const showCallouts = tab === 'today';
+  const lc = document.getElementById('admin-callouts-left');
+  const rc = document.getElementById('admin-callouts-right');
+  if (lc) lc.style.display = showCallouts ? '' : 'none';
+  if (rc) rc.style.display = showCallouts ? '' : 'none';
+  // Coupon audience radio click-to-select
+  if (tab === 'coupons') wireCouponRadios();
+}
+
+function wireCouponRadios() {
+  document.querySelectorAll('.aud-row').forEach(row => {
+    const radio = row.querySelector('input[type="radio"]');
+    if (!radio || radio._wired) return;
+    radio._wired = true;
+    radio.addEventListener('change', () => {
+      document.querySelectorAll('.aud-row').forEach(r => r.classList.remove('sel'));
+      row.classList.add('sel');
+    });
+  });
+}
+
+function bumpQty(slot, delta) {
+  const el = document.getElementById('qty-' + slot);
+  if (!el) return;
+  const next = Math.max(0, Math.min(20, parseInt(el.textContent, 10) + delta));
+  el.textContent = next;
+}
+
+function buildSchedCal() {
+  const cells = [
+    null,null,null,null,null,
+    [1,3,2],[2,2,1,'edit'],
+    [3,1,1],[4,2,0],[5,1,0],[6,2,1],[7,0,1],[8,1,2],[9,3,0],
+    [10,2,1],[11,1,0],[12,0,0],[13,2,0],[14,1,1],[15,2,1],[16,2,1],
+    [17,1,1],[18,1,0],[19,0,0],[20,1,0],[21,2,0],[22,1,1],[23,2,1],
+    [24,1,0],[25,0,0],[26,0,0],[27,1,0],[28,2,1],[29,1,0],[30,2,1],
+    [31,1,1],null,null,null,null,null,null,
+  ];
+  const html = cells.map((c,i) => {
+    if (!c) return '<div class="cal-day empty"></div>';
+    const [d, am, pm, flag] = c;
+    const dow = i % 7;
+    const we = (dow === 0 || dow === 6) ? ' we' : '';
+    const tgt = flag === 'edit' ? ' target' : '';
+    const has = (am > 0 || pm > 0) ? ' has' : '';
+    let slot;
+    if (am > 0 && pm > 0) slot = `<span class="d-slots">早${am} 午${pm}</span>`;
+    else if (am > 0)     slot = `<span class="d-slots">早${am}</span>`;
+    else if (pm > 0)     slot = `<span class="d-slots">午${pm}</span>`;
+    else                 slot = '<span class="d-none">—</span>';
+    return `<button class="cal-day${we}${has}${tgt}"><span class="d-num">${d}</span>${slot}</button>`;
+  }).join('');
+  const grid = document.getElementById('sched-cal-grid');
+  if (grid) grid.innerHTML = html;
+}
+
+/* ─── Admin: render players ─── */
+function renderPlayers() {
+  const list = document.getElementById('player-list');
+  list.innerHTML = players.map((p, i) => `
+    <div class="player-card fadein">
+      <div class="p-avatar">${p.init}</div>
+      <div class="p-name">${p.name}</div>
+      <div class="p-pax">${p.count} 人</div>
+      <div class="p-deposit ${p.deposit === 0 ? 'unpaid' : ''}">${p.deposit > 0 ? 'NT$'+p.deposit.toLocaleString() : '未付款'}</div>
+      <span class="p-status ${p.status==='checkin'?'s-done':p.status==='paid'?'s-paid':'s-pending'}">
+        ${p.status==='checkin'?'✓ 已核銷':p.status==='paid'?'已付款':'未付款'}
+      </span>
+      ${p.status==='paid' ? `<button class="ci-btn" onclick="checkin(${i})">核銷</button>` : '<div></div>'}
+    </div>`
+  ).join('');
+
+  // Update stats
+  const ci = players.filter(p=>p.status==='checkin').reduce((s,p)=>s+p.count,0);
+  const pd = players.filter(p=>p.status==='paid').reduce((s,p)=>s+p.count,0);
+  const pe = players.filter(p=>p.status==='pending').reduce((s,p)=>s+p.count,0);
+  const totalDep = players.reduce((s,p)=>s+p.deposit,0);
+  document.getElementById('stat-ci').textContent = ci;
+  document.getElementById('stat-paid').textContent = pd;
+  document.getElementById('stat-pend').textContent = pe;
+  const dsAmt = document.querySelector('.ds-amount');
+  if (dsAmt) dsAmt.textContent = `NT$ ${totalDep.toLocaleString()}`;
+}
+
+function checkin(i) {
+  players[i].status = 'checkin';
+  renderPlayers();
+}
+
+function doExport() {
+  const btn = document.getElementById('export-btn');
+  btn.innerHTML = '✅ SG_20260502.xlsx 已匯出！';
+  btn.style.background = 'var(--green-pale)';
+  btn.style.borderColor = 'var(--green-mid)';
+  setTimeout(() => {
+    btn.innerHTML = '<span>📊</span> 匯出 Excel — 匯入 ERP 系統';
+    btn.style.background = 'white';
+    btn.style.borderColor = 'var(--green-mid)';
+  }, 3000);
+}
+
+/* ─── Scan / Check-in flow ─── */
+let scanStep = 'scan';
+let scanTimer = null;
+
+function openScan() {
+  scanStep = 'scan';
+  document.getElementById('scan-overlay').classList.remove('hidden');
+  renderScanPane();
+  if (scanTimer) clearTimeout(scanTimer);
+  scanTimer = setTimeout(() => { if (scanStep === 'scan') advanceScan('detail'); }, 1900);
+}
+
+function closeScan() {
+  document.getElementById('scan-overlay').classList.add('hidden');
+  if (scanTimer) clearTimeout(scanTimer);
+  scanStep = 'scan';
+  renderScanPane();
+}
+
+function advanceScan(next) {
+  scanStep = next;
+  renderScanPane();
+}
+
+function renderScanPane() {
+  document.querySelectorAll('.scan-pane').forEach(p => {
+    p.classList.toggle('hidden', p.dataset.pane !== scanStep);
+  });
+}
+
+function completeScanPayment(method) {
+  const labels = { cash: '現金 結帳', card: '信用卡 結帳', linepay: 'LINE Pay 結帳' };
+  document.getElementById('success-method').textContent = labels[method] || '';
+  if (players[3]) players[3].status = 'checkin';
+  scanStep = 'success';
+  renderScanPane();
+  setTimeout(() => {
+    document.getElementById('scan-overlay').classList.add('hidden');
+    renderPlayers();
+    scanStep = 'scan';
+    renderScanPane();
+  }, 1600);
+}
+
+/* ─── Annotation callouts ─── */
+function renderCallouts(annotations, leftId, rightId) {
+  const left  = (annotations || []).filter(a => a.side === 'left');
+  const right = (annotations || []).filter(a => a.side !== 'left');
+  const buildHtml = arr => arr.map(a =>
+    `<div class="callout" style="top:${a.y}px;">${a.text}</div>`
+  ).join('');
+  const lEl = document.getElementById(leftId);
+  const rEl = document.getElementById(rightId);
+  if (lEl) lEl.innerHTML = buildHtml(left);
+  if (rEl) rEl.innerHTML = buildHtml(right);
+}
+
+const adminAnnotations = [
+  { side: 'right', y: 25,  text: '🖥 桌面/平板後台\n櫃台從電腦或 iPad 登入\n跟球友的 LINE 手機畫面區隔' },
+  { side: 'left',  y: 180, text: '📊 即時統計\n總人數 / 已核銷 / 待到場 / 未付款' },
+  { side: 'right', y: 320, text: '📷 掃碼核銷 / 結帳\n客人到場直接掃 QR Code' },
+  { side: 'left',  y: 560, text: '📋 報名名單表格\n含付款狀態，可手動補核銷' },
+  { side: 'right', y: 790, text: '📥 Excel 一鍵匯出\n含必要欄位，可直接匯入 ERP' },
+];
+
+/* ─── Init ─── */
+const _params = new URLSearchParams(window.location.search);
+const _tabParam = _params.get('tab');
+const _initialTab = (_tabParam === 'today' || _tabParam === 'schedule') ? _tabParam : 'coupons';
+renderPlayers();
+buildSchedCal();
+setAdminTab(_initialTab);
+renderCallouts(adminAnnotations, 'admin-callouts-left', 'admin-callouts-right');
+</script>
+</body>
+</html>

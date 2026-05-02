@@ -1,0 +1,1959 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>旭陽高爾夫 × LINE Bot 會員 × 折價券系統｜球友端</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --green-dark: #0D3B22;
+  --green-mid: #1A5C35;
+  --green-light: #2E8B57;
+  --green-pale: #E8F4ED;
+  --gold: #C9A84C;
+  --gold-light: #F5E9CB;
+  --line-green: #06C755;
+  --line-bg: #B9C5D0;
+  --cream: #F8F4EE;
+  --text-dark: #1A1A1A;
+  --text-mid: #4A5568;
+  --text-light: #888;
+  --border: #E2E8F0;
+}
+
+body {
+  font-family: -apple-system, 'PingFang TC', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+  background: var(--green-dark);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 12px 40px;
+}
+
+/* ── Header ── */
+.brand-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.brand-header .eyebrow {
+  color: var(--gold);
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.brand-header h1 {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.brand-header .subtitle {
+  color: rgba(255,255,255,0.5);
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+/* ── Mode toggle ── */
+.mode-bar {
+  display: flex;
+  border: 1.5px solid rgba(255,255,255,0.42);
+  background: rgba(255,255,255,0.06);
+  border-radius: 30px;
+  overflow: hidden;
+  margin-bottom: 22px;
+  box-shadow: 0 3px 14px rgba(0,0,0,0.18);
+}
+.mode-btn {
+  padding: 10px 24px;
+  font-size: 12.5px;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.78);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  transition: all 0.25s;
+}
+.mode-btn.active { background: white; color: var(--green-dark); border-radius: 30px; }
+body.admin-mode .mode-bar {
+  border-color: rgba(0,0,0,0.18);
+  background: rgba(0,0,0,0.03);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+/* ── Phone frame ── */
+.phone-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 360px;
+  position: relative;
+}
+.phone {
+  width: 320px;
+  background: #111;
+  border-radius: 44px;
+  padding: 10px;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.08),
+    inset 0 0 0 1px rgba(255,255,255,0.04),
+    0 32px 64px rgba(0,0,0,0.5);
+  position: relative;
+}
+.phone-screen {
+  border-radius: 36px;
+  overflow: hidden;
+  background: #000;
+}
+
+/* Fake notch / status bar */
+.status-bar {
+  background: #00B900;
+  padding: 18px 14px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: white;
+}
+.status-bar .notch-area {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90px;
+  height: 22px;
+  background: #111;
+  border-radius: 0 0 16px 16px;
+  z-index: 5;
+}
+
+/* LINE Header */
+.line-header {
+  background: #00B900;
+  padding: 6px 14px 12px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.line-avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.line-name { color: white; font-size: 13px; font-weight: 600; }
+.line-sub { color: rgba(255,255,255,0.75); font-size: 9px; margin-top: 1px; }
+.line-icons { margin-left: auto; display: flex; gap: 14px; color: white; font-size: 15px; }
+
+/* Chat area */
+.chat {
+  background: var(--line-bg);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-height: 380px;
+}
+
+/* Date divider */
+.date-div {
+  text-align: center;
+  font-size: 9px;
+  color: rgba(0,0,0,0.4);
+  background: rgba(255,255,255,0.45);
+  border-radius: 10px;
+  padding: 2px 8px;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+/* Message rows */
+.msg-row { display: flex; gap: 5px; align-items: flex-end; }
+.msg-row.user { justify-content: flex-end; }
+.msg-row.bot { align-items: flex-start; }
+.b-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; flex-shrink: 0;
+}
+.bubble {
+  max-width: 200px;
+  border-radius: 16px;
+  padding: 8px 11px;
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+.bubble.bot {
+  background: white;
+  color: var(--text-dark);
+  border-radius: 3px 16px 16px 16px;
+}
+.bubble.user {
+  background: var(--line-green);
+  color: white;
+  border-radius: 16px 16px 3px 16px;
+}
+
+/* Flex Cards */
+.card-wrap { display: flex; gap: 5px; align-items: flex-start; }
+.card-sp { width: 26px; flex-shrink: 0; }
+
+.flex-card {
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  max-width: 210px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+.fc-head {
+  background: var(--green-mid);
+  padding: 8px 10px;
+  display: flex; align-items: center; gap: 5px;
+  color: white; font-size: 11px; font-weight: 600;
+}
+.fc-body { padding: 8px 10px; }
+
+/* Session list */
+.sess-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 0;
+  border-bottom: 0.5px solid var(--border);
+}
+.sess-row:last-child { border-bottom: none; }
+.sess-info { flex: 1; }
+.sess-date { font-size: 11px; font-weight: 600; color: var(--text-dark); }
+.sess-time { font-size: 9px; color: var(--text-light); }
+.badge {
+  font-size: 9px;
+  padding: 2px 5px;
+  border-radius: 8px;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.badge.ok { background: var(--green-pale); color: var(--green-mid); }
+.badge.low { background: #FEF0E8; color: #B85C10; }
+.fc-btn {
+  background: var(--line-green);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-size: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+/* Calendar card */
+.cal-card {
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  max-width: 248px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.cal-head {
+  background: var(--green-mid);
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.cal-month { color: white; font-size: 11px; font-weight: 600; }
+.cal-nav {
+  color: rgba(255,255,255,0.55);
+  font-size: 13px;
+  padding: 0 5px;
+  cursor: pointer;
+  user-select: none;
+}
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 6px 4px 2px;
+}
+.cal-weekdays span {
+  font-size: 8px;
+  color: var(--text-light);
+  text-align: center;
+  padding: 3px 0;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.cal-weekdays span.we { color: var(--green-mid); }
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  padding: 0 4px 2px;
+}
+.cal-day {
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 4px;
+  padding: 3px 0 4px;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 30px;
+  cursor: default;
+  transition: all 0.15s;
+}
+.cal-day.empty { visibility: hidden; pointer-events: none; }
+.cal-day .d-num {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dark);
+  line-height: 1;
+}
+.cal-day.we .d-num { color: var(--green-mid); }
+.cal-day .d-slots {
+  font-size: 7px;
+  color: var(--green-mid);
+  margin-top: 2px;
+  line-height: 1;
+  font-weight: 500;
+  white-space: nowrap;
+  letter-spacing: -0.2px;
+}
+.cal-day .d-none {
+  font-size: 8px;
+  color: #d4d4d4;
+  margin-top: 2px;
+  line-height: 1;
+}
+.cal-day.has { cursor: pointer; }
+.cal-day.has:hover, .cal-day.has:active { background: var(--green-pale); }
+.cal-day.target {
+  background: var(--green-pale);
+  border-color: var(--green-mid);
+  animation: pulseDay 1.8s ease-in-out infinite;
+}
+@keyframes pulseDay {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(46, 139, 87, 0.5); }
+  50% { box-shadow: 0 0 0 5px rgba(46, 139, 87, 0); }
+}
+.cal-foot {
+  text-align: center;
+  font-size: 9px;
+  color: var(--text-light);
+  padding: 5px 8px 8px;
+  border-top: 0.5px solid var(--border);
+  margin: 2px 8px 0;
+}
+
+/* Form card */
+.form-card { background: white; border-radius: 10px; overflow: hidden; max-width: 210px; }
+.form-head { background: var(--green-mid); padding: 7px 10px; }
+.form-head p { color: white; font-size: 11px; font-weight: 600; }
+.form-head small { color: rgba(255,255,255,0.8); font-size: 9px; }
+.form-body { padding: 9px 10px; display: flex; flex-direction: column; gap: 7px; }
+.f-label { font-size: 9px; color: var(--text-light); margin-bottom: 1px; }
+.f-val { font-size: 11px; font-weight: 500; color: var(--text-dark); }
+.f-input {
+  width: 100%;
+  border: 0.5px solid var(--border);
+  border-radius: 5px;
+  padding: 4px 7px;
+  font-size: 11px;
+  font-family: inherit;
+  outline: none;
+}
+.pax-row { display: flex; gap: 4px; }
+.pax-btn {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: white;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.pax-btn.sel { background: var(--green-mid); color: white; border-color: var(--green-mid); }
+.deposit-preview {
+  background: var(--green-pale);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 10px;
+  color: var(--green-mid);
+}
+.fc-cta {
+  width: 100%;
+  background: var(--line-green);
+  color: white;
+  border: none;
+  border-radius: 7px;
+  padding: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  margin-top: 2px;
+}
+
+/* Deposit confirmation card */
+.dep-card { background: white; border-radius: 10px; overflow: hidden; max-width: 210px; }
+.dep-head { background: #C9853A; padding: 7px 10px; display: flex; align-items: center; gap: 5px; }
+.dep-head p { color: white; font-size: 11px; font-weight: 600; }
+.dep-body { padding: 10px; }
+.dep-row { display: flex; justify-content: space-between; font-size: 10px; padding: 3px 0; }
+.dep-row .k { color: var(--text-light); }
+.dep-row .v { font-weight: 500; color: var(--text-dark); }
+.dep-total {
+  border-top: 1.5px solid var(--green-mid);
+  margin-top: 7px;
+  padding-top: 7px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.dep-total .tl { font-size: 11px; font-weight: 600; color: var(--text-dark); }
+.dep-total .ta { font-size: 20px; font-weight: 700; color: var(--green-mid); }
+.cancel-note { font-size: 9px; color: var(--text-light); margin-top: 5px; line-height: 1.4; }
+.lp-btn {
+  width: 100%;
+  background: #00B900;
+  color: white;
+  border: none;
+  border-radius: 7px;
+  padding: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 8px;
+  font-family: inherit;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+}
+.lp-logo {
+  background: white;
+  color: #00B900;
+  font-size: 8px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* Voucher */
+.voucher { background: white; border-radius: 10px; overflow: hidden; max-width: 210px; }
+.vc-top {
+  background: linear-gradient(135deg, var(--green-dark), var(--green-light));
+  padding: 12px 10px 10px;
+  text-align: center;
+}
+.vc-check {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.8);
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 14px;
+  margin: 0 auto 5px;
+}
+.vc-top h3 { color: white; font-size: 13px; font-weight: 700; }
+.vc-top p { color: rgba(255,255,255,0.8); font-size: 9px; margin-top: 1px; }
+.vc-mid { padding: 8px 10px; background: #FAFAFA; }
+.vc-row { display: flex; justify-content: space-between; font-size: 10px; padding: 2.5px 0; }
+.vc-row .k { color: var(--text-light); }
+.vc-row .v { font-weight: 600; color: var(--text-dark); }
+.vc-qr {
+  margin: 0 10px 8px;
+  background: white;
+  border-radius: 7px;
+  padding: 7px;
+  text-align: center;
+  border: 0.5px solid var(--border);
+}
+.vc-qr svg { display: block; margin: 0 auto 3px; }
+.vc-qr p { font-size: 8px; color: var(--text-light); }
+.vc-foot {
+  background: var(--green-mid);
+  padding: 6px 10px;
+  text-align: center;
+}
+.vc-foot p { color: rgba(255,255,255,0.8); font-size: 9px; }
+.vc-foot strong { color: white; font-size: 10px; }
+
+/* Input bar */
+.input-bar {
+  background: #F0F0F0;
+  padding: 5px 8px;
+  display: flex; align-items: center; gap: 5px;
+  border-top: 0.5px solid #ccc;
+}
+.input-mock {
+  flex: 1;
+  background: white;
+  border-radius: 18px;
+  padding: 5px 10px;
+  font-size: 11px;
+  color: #bbb;
+  border: 0.5px solid #ddd;
+}
+.send-circle {
+  width: 28px; height: 28px;
+  background: var(--line-green);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 12px;
+}
+
+/* Rich Menu */
+.rich-menu {
+  background: #F5F5F5;
+  border-top: 0.5px solid #ddd;
+  padding: 5px;
+}
+.rm-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 3px; }
+.rm-btn {
+  background: white;
+  border: 0.5px solid #E0E0E0;
+  border-radius: 7px;
+  padding: 9px 3px;
+  cursor: pointer;
+  font-size: 9px;
+  color: #444;
+  font-weight: 500;
+  line-height: 1.4;
+  text-align: center;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.rm-btn.hl { background: var(--green-pale); border-color: var(--green-mid); color: var(--green-mid); }
+.rm-icon { font-size: 14px; display: block; margin-bottom: 2px; }
+
+/* Step nav */
+.step-nav {
+  width: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding: 0 4px;
+}
+.dots { display: flex; gap: 5px; }
+.dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  transition: all 0.3s;
+}
+.dot.active { background: white; width: 20px; border-radius: 3px; }
+.dot.done { background: rgba(255,255,255,0.55); }
+.s-btn {
+  padding: 7px 16px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: inherit;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.s-btn.next { background: white; color: var(--green-dark); }
+.s-btn.prev { background: rgba(255,255,255,0.12); color: white; }
+.s-btn:disabled { opacity: 0.3; pointer-events: none; }
+
+/* Narration */
+.narration {
+  width: 320px;
+  margin-top: 12px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 12px 15px;
+  border-left: 3px solid var(--gold);
+}
+.narr-tag { color: var(--gold); font-size: 9px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 3px; }
+.narr-title { color: white; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.narr-desc { color: rgba(255,255,255,0.65); font-size: 11px; line-height: 1.6; }
+
+/* ── Admin Panel (desktop dashboard) ── */
+.admin {
+  width: 100%;
+  max-width: 640px;
+  background: white;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 14px 38px rgba(0,0,0,0.18);
+  position: relative;
+}
+
+/* Mac-like browser chrome */
+.admin-chrome {
+  background: #E8E8E8;
+  padding: 9px 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 0.5px solid rgba(0,0,0,0.08);
+}
+.ac-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+.ac-dot.red { background: #FF5F57; }
+.ac-dot.yellow { background: #FEBC2E; }
+.ac-dot.green { background: #28C840; }
+.ac-url {
+  flex: 1;
+  background: white;
+  border-radius: 5px;
+  padding: 4px 14px;
+  font-size: 11px;
+  color: var(--text-mid);
+  text-align: center;
+  border: 0.5px solid rgba(0,0,0,0.08);
+  margin-left: 6px;
+}
+
+/* Admin body */
+.admin-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #F2EDE0;
+}
+
+.a-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.a-head {
+  background: var(--green-mid);
+  padding: 13px 18px;
+  display: flex; justify-content: space-between; align-items: flex-start;
+}
+.a-head-left .a-session { color: white; font-size: 15px; font-weight: 600; }
+.a-head-left .a-date { color: rgba(255,255,255,0.8); font-size: 11px; margin-top: 3px; }
+.a-badge-open {
+  background: rgba(255,255,255,0.2);
+  color: white;
+  font-size: 10px;
+  padding: 4px 11px;
+  border-radius: 11px;
+  font-weight: 500;
+}
+.a-stats { display: grid; grid-template-columns: repeat(4,1fr); }
+.a-stat {
+  padding: 14px 8px;
+  text-align: center;
+  border-right: 0.5px solid var(--border);
+}
+.a-stat:last-child { border-right: none; }
+.a-stat-num { font-size: 22px; font-weight: 700; color: var(--green-mid); }
+.a-stat-num.amber { color: #C9853A; }
+.a-stat-num.blue { color: #2B6CB0; }
+.a-stat-label { font-size: 10px; color: var(--text-light); margin-top: 3px; }
+
+/* Deposit summary bar */
+.dep-summary {
+  background: white;
+  border-radius: 12px;
+  padding: 14px 20px;
+  display: flex; justify-content: space-between; align-items: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.dep-summary .ds-label { font-size: 13px; color: var(--text-mid); }
+.dep-summary .ds-amount { font-size: 22px; font-weight: 700; color: var(--green-mid); }
+
+/* Section label */
+.section-label {
+  color: var(--text-light);
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 4px 2px 0;
+  font-weight: 600;
+}
+
+/* Player table (desktop style) */
+.player-table {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.player-thead {
+  background: #FAF7F0;
+  padding: 10px 16px;
+  display: grid;
+  grid-template-columns: 32px 1fr 56px 110px 90px 64px;
+  gap: 10px;
+  align-items: center;
+  font-size: 9px;
+  color: var(--text-light);
+  letter-spacing: 1px;
+  font-weight: 600;
+  text-transform: uppercase;
+  border-bottom: 0.5px solid var(--border);
+}
+.player-card {
+  padding: 11px 16px;
+  display: grid;
+  grid-template-columns: 32px 1fr 56px 110px 90px 64px;
+  gap: 10px;
+  align-items: center;
+  background: white;
+  border-bottom: 0.5px solid var(--border);
+}
+.player-card:last-child { border-bottom: none; }
+.p-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--green-pale);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--green-mid);
+  flex-shrink: 0;
+}
+.p-name { font-size: 13px; font-weight: 600; color: var(--text-dark); }
+.p-pax { font-size: 12px; color: var(--text-mid); }
+.p-deposit { font-size: 12px; color: var(--text-mid); }
+.p-deposit.unpaid { color: #B85C10; font-weight: 500; }
+.p-status {
+  font-size: 10px;
+  padding: 4px 9px;
+  border-radius: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+  justify-self: start;
+}
+.s-done { background: var(--green-mid); color: white; }
+.s-paid { background: var(--green-pale); color: var(--green-mid); }
+.s-pending { background: #FEF0E8; color: #B85C10; }
+.ci-btn {
+  background: var(--line-green);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+/* Export button */
+.export-btn {
+  width: 100%;
+  background: white;
+  color: var(--green-mid);
+  border: 1.5px solid var(--green-mid);
+  border-radius: 10px;
+  padding: 13px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  transition: all 0.2s;
+}
+.export-btn:active { transform: scale(0.98); }
+
+.erp-note {
+  text-align: center;
+  color: var(--text-light);
+  font-size: 10px;
+}
+
+/* Fade in animation */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fadein { animation: fadeUp 0.3s ease forwards; }
+
+/* Scan CTA in admin */
+.scan-cta-btn {
+  width: 100%;
+  background: var(--green-mid);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 3px 10px rgba(46, 139, 87, 0.35);
+  transition: transform 0.1s;
+}
+.scan-cta-btn:active { transform: scale(0.98); }
+
+/* Scan modal */
+.scan-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.scan-overlay.hidden { display: none; }
+.scan-pane {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 320px;
+  overflow: hidden;
+  animation: slideUp 0.25s ease;
+}
+.scan-pane.hidden { display: none; }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.scan-head {
+  background: var(--green-mid);
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.scan-title { color: white; font-size: 14px; font-weight: 600; }
+.scan-close {
+  color: rgba(255,255,255,0.7);
+  font-size: 16px;
+  cursor: pointer;
+  user-select: none;
+  padding: 0 4px;
+}
+
+.scan-frame {
+  background: #111;
+  height: 220px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.vf-corners { width: 160px; height: 160px; position: relative; }
+.vfc {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--gold);
+}
+.vfc.tl { top: 0; left: 0; border-right: none; border-bottom: none; }
+.vfc.tr { top: 0; right: 0; border-left: none; border-bottom: none; }
+.vfc.bl { bottom: 0; left: 0; border-right: none; border-top: none; }
+.vfc.br { bottom: 0; right: 0; border-left: none; border-top: none; }
+.vf-laser {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  top: 0;
+  animation: laser 1.3s ease-in-out infinite;
+  box-shadow: 0 0 8px var(--gold);
+}
+@keyframes laser {
+  0%, 100% { top: 6%; }
+  50% { top: 86%; }
+}
+.scan-hint {
+  background: white;
+  padding: 14px 16px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-mid);
+  line-height: 1.6;
+}
+
+.detail-body {
+  padding: 18px 16px 14px;
+  text-align: center;
+}
+.dt-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--green-pale);
+  color: var(--green-mid);
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 8px;
+}
+.dt-name { font-size: 17px; font-weight: 700; color: var(--text-dark); }
+.dt-sub { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+.dt-rows {
+  margin-top: 14px;
+  text-align: left;
+  background: #FAFAFA;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.dt-row { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; }
+.dt-row .k { color: var(--text-light); }
+.dt-row .v { color: var(--text-dark); font-weight: 500; }
+.scan-cta-action {
+  width: calc(100% - 32px);
+  margin: 0 16px 16px;
+  background: var(--line-green);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.settle-body { padding: 16px 16px 6px; }
+.st-row { display: flex; justify-content: space-between; font-size: 12px; padding: 5px 0; }
+.st-row .k { color: var(--text-mid); }
+.st-row .v { color: var(--text-dark); font-weight: 500; }
+.st-row.balance {
+  border-top: 1.5px solid var(--green-mid);
+  margin-top: 6px;
+  padding-top: 10px;
+  align-items: baseline;
+}
+.st-row.balance .k { color: var(--text-dark); font-weight: 600; font-size: 13px; }
+.st-row.balance .v strong { color: var(--green-mid); font-size: 22px; }
+
+.pm-label {
+  font-size: 11px;
+  color: var(--text-light);
+  text-align: center;
+  margin: 12px 0 8px;
+}
+.pm-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  padding: 0 16px 16px;
+}
+.pm-btn {
+  border: 1px solid var(--border);
+  background: white;
+  border-radius: 10px;
+  padding: 10px 4px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.15s;
+  color: var(--text-dark);
+}
+.pm-btn:hover { border-color: var(--green-mid); background: var(--green-pale); }
+.pm-icon { font-size: 18px; }
+
+[data-pane="success"] {
+  padding: 32px 16px 28px;
+  text-align: center;
+}
+.success-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--green-mid);
+  color: white;
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+  box-shadow: 0 4px 16px rgba(46, 139, 87, 0.35);
+  animation: pop 0.4s ease;
+}
+@keyframes pop {
+  from { transform: scale(0); }
+  60% { transform: scale(1.15); }
+  to { transform: scale(1); }
+}
+.success-title { font-size: 18px; font-weight: 700; color: var(--green-dark); margin-bottom: 6px; }
+.success-name { font-size: 13px; color: var(--text-mid); }
+.success-amount { font-size: 22px; font-weight: 700; color: var(--green-mid); margin-top: 6px; }
+.success-method { font-size: 11px; color: var(--text-light); margin-top: 4px; }
+
+/* Admin mode — body theme switch */
+body { transition: background-color 0.35s ease; }
+body.admin-mode { background: #F2EDE0; }
+body.admin-mode .brand-header h1 { color: var(--green-dark); }
+body.admin-mode .brand-header .subtitle { color: rgba(0,0,0,0.5); }
+body.admin-mode .brand-header .eyebrow { color: #B8860B; }
+body.admin-mode .mode-bar { border-color: rgba(0,0,0,0.15); }
+body.admin-mode .mode-btn { color: rgba(0,0,0,0.55); }
+body.admin-mode .mode-btn.active { background: var(--green-mid); color: white; }
+body.admin-mode .narration {
+  background: white;
+  border-left-color: var(--green-mid);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+body.admin-mode .narr-tag { color: var(--green-mid); }
+body.admin-mode .narr-title { color: var(--green-dark); }
+body.admin-mode .narr-desc { color: var(--text-mid); }
+body.admin-mode .section-label { color: var(--text-light); }
+body.admin-mode .erp-note { color: rgba(0,0,0,0.45); }
+
+/* Admin top dashboard bar */
+.dash-bar {
+  background: linear-gradient(135deg, #1A5C35, #0D3B22);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(13, 59, 34, 0.18);
+}
+.dash-icon {
+  font-size: 16px;
+  background: rgba(255,255,255,0.15);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.dash-text { flex: 1; min-width: 0; }
+.dash-title { color: white; font-size: 13px; font-weight: 700; letter-spacing: 0.3px; }
+.dash-sub { color: rgba(255,255,255,0.6); font-size: 9px; margin-top: 1px; }
+.dash-status {
+  font-size: 9px;
+  color: #6FE198;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Annotation callouts */
+.callouts-side {
+  position: absolute;
+  top: 12px;
+  width: 210px;
+  pointer-events: none;
+  z-index: 10;
+}
+.callouts-side.left {
+  right: 100%;
+  margin-right: 40px;
+}
+.callouts-side.right {
+  left: 100%;
+  margin-left: 40px;
+}
+.callout {
+  position: absolute;
+  width: 100%;
+  background: rgba(255,255,255,0.97);
+  color: var(--green-dark);
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 11px;
+  line-height: 1.55;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  font-weight: 500;
+  pointer-events: auto;
+  white-space: pre-line;
+  animation: calloutIn 0.4s ease;
+}
+.callouts-side.right .callout { border-left: 3px solid var(--gold); }
+.callouts-side.left .callout {
+  border-right: 3px solid var(--gold);
+  text-align: right;
+}
+.callout::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  width: 34px;
+  border-top: 1.5px dashed var(--gold);
+}
+.callouts-side.right .callout::before { left: -36px; }
+.callouts-side.left .callout::before { right: -36px; }
+.callout::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.3);
+}
+.callouts-side.right .callout::after { left: -42px; }
+.callouts-side.left .callout::after { right: -42px; }
+body.admin-mode .callout {
+  background: white;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+}
+@keyframes calloutIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+@media (max-width: 950px) {
+  .callouts-side {
+    position: static;
+    width: 320px;
+    margin: 14px auto 0;
+  }
+  .callouts-side .callout {
+    position: static;
+    width: 100%;
+    margin-bottom: 8px;
+    text-align: left !important;
+    border-left: 3px solid var(--gold) !important;
+    border-right: none !important;
+  }
+  .callout::before, .callout::after { display: none; }
+}
+
+/* ── Step 5 hand-off CTA in narration ── */
+.narr-cta {
+  margin-top: 12px;
+  background: var(--gold);
+  color: var(--green-dark);
+  border: none;
+  border-radius: 8px;
+  padding: 11px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  width: 100%;
+  letter-spacing: 0.3px;
+  transition: transform 0.1s, background 0.15s;
+  box-shadow: 0 3px 10px rgba(201, 168, 76, 0.25);
+}
+.narr-cta:hover { background: #D9B85F; }
+.narr-cta:active { transform: scale(0.98); }
+.narr-cta.hidden { display: none; }
+
+/* ── Admin tabs ── */
+.admin-tabs {
+  display: flex;
+  background: white;
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.admin-tab {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-mid);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.admin-tab:hover { background: var(--green-pale); }
+.admin-tab.active {
+  background: var(--green-mid);
+  color: white;
+  box-shadow: 0 2px 8px rgba(46, 139, 87, 0.3);
+}
+
+.pane { display: flex; flex-direction: column; gap: 10px; }
+.pane.hidden { display: none; }
+
+/* ── Schedule pane ── */
+.sched-header {
+  background: linear-gradient(135deg, var(--gold-light), white);
+  border-radius: 12px;
+  padding: 14px 18px;
+  border-left: 3px solid var(--gold);
+}
+.sched-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--green-dark);
+  letter-spacing: 0.3px;
+}
+.sched-sub {
+  font-size: 12px;
+  color: var(--text-mid);
+  margin-top: 3px;
+}
+.sched-calendar-wrap {
+  background: white;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.sched-cal {
+  width: 280px;
+  max-width: 100%;
+  border-radius: 8px;
+  box-shadow: none;
+  border: 0.5px solid var(--border);
+}
+
+.sched-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.sched-card-head {
+  background: var(--green-mid);
+  padding: 13px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sched-card-title { color: white; font-size: 15px; font-weight: 700; }
+.sched-card-sub { color: rgba(255,255,255,0.75); font-size: 11px; margin-top: 2px; }
+.sched-edit-tag {
+  background: var(--gold);
+  color: var(--green-dark);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 11px;
+  letter-spacing: 0.5px;
+}
+
+.slot-block {
+  padding: 14px 18px;
+  border-bottom: 0.5px solid var(--border);
+}
+.slot-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--green-dark);
+  margin-bottom: 10px;
+}
+.slot-rows { display: flex; flex-direction: column; gap: 8px; }
+.slot-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sr-k { color: var(--text-light); flex-shrink: 0; min-width: 76px; }
+.sr-v { color: var(--text-dark); font-weight: 600; }
+.sr-unit { color: var(--text-light); font-weight: 400; font-size: 11px; }
+.sr-control { display: flex; align-items: center; gap: 8px; }
+.qty-btn {
+  width: 26px; height: 26px;
+  border: 1px solid var(--border);
+  background: white;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--green-mid);
+  font-weight: 700;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.qty-btn:hover { background: var(--green-pale); border-color: var(--green-mid); }
+.qty-btn:active { transform: scale(0.92); }
+.qty-val {
+  min-width: 24px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+.slot-tag {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 9px;
+  font-weight: 600;
+  margin-left: 4px;
+}
+.slot-tag.full { background: var(--green-pale); color: var(--green-mid); }
+.slot-tag.low { background: #FEF0E8; color: #B85C10; }
+
+.month-rules {
+  padding: 14px 18px;
+  background: #FAF7F0;
+  border-bottom: 0.5px solid var(--border);
+}
+.month-rules-label {
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-light);
+  letter-spacing: 1.5px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+.rule-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  padding: 5px 0;
+}
+.rule-row.policy-row { display: block; padding: 8px 0 0; }
+.rule-k { color: var(--text-mid); }
+.rule-v { color: var(--text-dark); font-weight: 600; }
+.check-on { color: var(--green-mid); font-size: 14px; margin-right: 4px; }
+.own-tag {
+  background: var(--gold);
+  color: var(--green-dark);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 7px;
+  margin-left: 6px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+.policy-text {
+  background: white;
+  border: 0.5px solid var(--border);
+  border-radius: 7px;
+  padding: 9px 11px;
+  font-size: 11.5px;
+  color: var(--text-mid);
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  line-height: 1.5;
+}
+.edit-link {
+  background: white;
+  color: var(--green-mid);
+  border: 1px solid var(--green-mid);
+  border-radius: 6px;
+  padding: 4px 11px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.edit-link:hover { background: var(--green-pale); }
+.save-btn {
+  width: calc(100% - 36px);
+  margin: 14px 18px 18px;
+  background: var(--green-mid);
+  color: white;
+  border: none;
+  border-radius: 9px;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 3px 10px rgba(46, 139, 87, 0.25);
+  transition: transform 0.1s;
+}
+.save-btn:active { transform: scale(0.98); }
+
+/* Coupon list */
+.cp-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 0;
+  border-bottom: 0.5px solid var(--border);
+}
+.cp-row:last-child { border-bottom: none; }
+.cp-row.featured {
+  background: linear-gradient(90deg, var(--gold-light), transparent);
+  margin: 0 -10px;
+  padding: 7px 10px;
+  border-radius: 5px;
+  border: 1px solid var(--gold);
+}
+.cp-left {
+  width: 54px; flex-shrink: 0; text-align: center;
+  border-right: 1px dashed var(--border);
+  padding-right: 8px;
+}
+.cp-amt {
+  font-size: 14px; font-weight: 800;
+  color: var(--green-mid); line-height: 1.1;
+  letter-spacing: -0.4px;
+}
+.cp-tag {
+  font-size: 8px;
+  margin-top: 2px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.cp-info { flex: 1; min-width: 0; }
+.cp-name { font-size: 10.5px; font-weight: 600; color: var(--text-dark); }
+.cp-exp { font-size: 9px; color: var(--text-light); margin-top: 1px; }
+
+/* Utility */
+.hidden { display: none; }
+.screen { display: flex; flex-direction: column; align-items: center; width: 100%; }
+</style>
+</head>
+<body>
+
+<!-- Brand header -->
+<div class="brand-header">
+  <p class="eyebrow">LINE Bot 會員 × 折價券系統 · 提案展示 Demo</p>
+  <h1>旭陽高爾夫球場</h1>
+  <p class="subtitle">Sunshine Valley Golf Club × 會員推播 × 折價券自動發送</p>
+</div>
+
+<!-- Mode toggle (links to two separate pages) -->
+<div class="mode-bar">
+  <a class="mode-btn active" href="./">📱 球友端</a>
+  <a class="mode-btn" href="admin.html">🖥 球場端</a>
+</div>
+
+<!-- ═══════════ USER FLOW ═══════════ -->
+<div class="screen" id="screen-user">
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="phone-screen">
+        <div class="status-bar">
+          <div class="notch-area"></div>
+          <span style="font-size:9px; opacity:0;">9:41</span>
+          <span style="font-size:9px; opacity:0;">···</span>
+        </div>
+        <div class="line-header">
+          <div class="line-avatar">⛳</div>
+          <div>
+            <div class="line-name">旭陽高爾夫球場</div>
+            <div class="line-sub">官方帳號</div>
+          </div>
+          <div class="line-icons">
+            <span>🔍</span><span>☰</span>
+          </div>
+        </div>
+
+        <!-- Chat -->
+        <div class="chat" id="chat"></div>
+
+        <!-- Input bar -->
+        <div class="input-bar">
+          <span style="font-size:16px;color:#999;">😊</span>
+          <div class="input-mock">Aa</div>
+          <span style="font-size:16px;color:#999;">🎤</span>
+          <div class="send-circle">＋</div>
+        </div>
+
+        <!-- Rich Menu -->
+        <div class="rich-menu">
+          <div class="rm-grid">
+            <button class="rm-btn" id="rm-coupons" onclick="rmTap('coupons')"><span class="rm-icon">🎟️</span>我的折價券</button>
+            <button class="rm-btn" id="rm-sessions" onclick="rmTap('sessions')"><span class="rm-icon">⛳</span>擊球預約</button>
+            <button class="rm-btn" id="rm-contact" onclick="rmTap('contact')"><span class="rm-icon">📞</span>聯絡球場</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step navigation -->
+    <div class="step-nav">
+      <button class="s-btn prev" id="prev-btn" onclick="prevStep()">← 返回</button>
+      <div class="dots" id="dots"></div>
+      <button class="s-btn next" id="next-btn" onclick="nextStep()">繼續 →</button>
+    </div>
+
+    <!-- Narration -->
+    <div class="narration" id="narration">
+      <div class="narr-tag">畫面說明</div>
+      <div class="narr-title" id="narr-title"></div>
+      <div class="narr-desc" id="narr-desc"></div>
+      <button class="narr-cta hidden" id="narr-cta" onclick="window.location='admin.html?tab=today'"></button>
+    </div>
+
+    <!-- Callouts (absolute, beside phone) -->
+    <div class="callouts-side left" id="callouts-left"></div>
+    <div class="callouts-side right" id="callouts-right"></div>
+  </div>
+</div>
+
+<script>
+/* ─── Data ─── */
+let formState = { name: '林志明', phone: '0912-345-678', pax: 4 };
+
+const DEPOSIT_PER_GROUP = 2000;
+const GREEN_FEE_PER_PERSON = 3500;
+
+/* ─── Steps ─── */
+const steps = [
+  {
+    narr: { title:'① 加入官方 LINE × 收到歡迎折價券', desc:'球友加入旭陽官方 LINE 後立即收到歡迎訊息與 NT$300 開戶折價券。整個發券流程自動化，櫃台不用印券、不用記名單。歡迎禮就是「為什麼要加 LINE」的答案。' },
+    hl: null,
+    next: '看我的折價券 →',
+    annotations: [
+      { side: 'right', y: 105, text: '⛳ 加入旭陽官方 LINE\n自動推送歡迎訊息' },
+      { side: 'right', y: 250, text: '🎁 NT$300 開戶折價券\n自動推播 · 不勞櫃台' },
+      { side: 'left', y: 530, text: '🔘 Rich Menu\n「我的折價券」放主位' },
+    ],
+    build: () => [
+      divider('2026年4月27日'),
+      bot('您好！歡迎來到\n旭陽高爾夫球場 ⛳\n\n感謝您加入官方 LINE，這是您的歡迎禮 🎁'),
+      cardWrap(welcomeCouponCard()),
+    ],
+  },
+  {
+    narr: { title:'② 我的折價券 — 清單與條碼詳情', desc:'球友點 Rich Menu「我的折價券」即可看到所有可用券。點任一張顯示條碼，到場給櫃台掃描即可使用。發出 / 已用 / 未用都有後台紀錄，球友再也不會「券我有但今天忘了帶」。' },
+    hl: 'coupons',
+    next: '看擊球預約 →',
+    annotations: [
+      { side: 'right', y: 175, text: '🎟️ 折價券清單\n面額·有效期·條件一目了然' },
+      { side: 'left', y: 380, text: '📲 條碼到場給櫃台掃\n一秒核銷不用記名單' },
+    ],
+    build: () => [
+      usr('我的折價券'),
+      bot('您目前有 3 張可用折價券：'),
+      cardWrap(couponListCard()),
+      bot('點 NT$300 開戶券查看條碼：'),
+      cardWrap(couponDetailCard()),
+    ],
+  },
+  {
+    narr: { title:'③ 月曆 — 選擇擊球日期', desc:'除了折價券，也支援線上擊球預約。系統以月曆呈現可預約日期，每一天標示「早球 N 組 / 午球 N 組」剩餘狀況。球友直接點選想去的日期即可進入下一步。' },
+    hl: 'sessions',
+    next: '選擇場次 →',
+    annotations: [
+      { side: 'right', y: 130, text: '📅 月曆呈現可預約日期\n每日標示「早 N 組 / 午 N 組」' },
+      { side: 'left', y: 240, text: '✨ 5/2 金色脈動\n推薦點選的示範日期' },
+    ],
+    build: () => [
+      usr('擊球預約'),
+      bot('請選擇您想擊球的日期：'),
+      cardWrap(calendarCard()),
+    ],
+  },
+  {
+    narr: { title:'④ 填寫報名資料', desc:'選定場次後填入姓名、電話、人數，系統即時計算訂金。資料已預填 LINE 個人資訊，更省事。' },
+    hl: null,
+    next: '確認送出 →',
+    annotations: [
+      { side: 'right', y: 145, text: '✏️ 姓名 / 電話 LINE 內直接輸入\n憑證會送到本人手機' },
+      { side: 'left', y: 310, text: '💰 1 組訂金 NT$2,000\n（1–4 人都一樣，不分人頭）' },
+    ],
+    build: () => [
+      usr('報名 5/2 早場'),
+      bot('請填寫以下報名資訊：'),
+      cardWrap(formCard()),
+    ],
+  },
+  {
+    narr: { title:'⑤ 訂金確認與 LINE Pay 付款', desc:'系統顯示明細後，球友直接在 LINE 內完成付款，全程不需跳出 App，轉換率大幅提升。手上的折價券可同步抵扣。' },
+    hl: null,
+    next: 'LINE Pay 付款 →',
+    annotations: [
+      { side: 'right', y: 145, text: '📋 訂金明細\n到場可抵擊球費' },
+      { side: 'left', y: 340, text: '💳 LINE Pay 付款\n不跳出 LINE，轉換率高' },
+    ],
+    build: () => [
+      usr(`確認報名 — ${formState.name} × ${formState.pax}人`),
+      bot('✅ 確認完成，請支付訂金：'),
+      cardWrap(depositCard()),
+    ],
+  },
+  {
+    narr: {
+      title:'⑥ 電子憑證（含 QR Code）',
+      desc:'付款成功後，系統自動把電子憑證推送到球友的 LINE。球友到場只需出示這張 QR Code 即可入場，免帶紙本。',
+      cta:'→ 看球場後台怎麼處理這筆預約'
+    },
+    hl: null,
+    annotations: [
+      { side: 'right', y: 110, text: '🎫 報名成功電子憑證\n自動發送到 LINE' },
+      { side: 'left', y: 250, text: '📞 留聯繫電話\n颱風假時球場主動通知' },
+      { side: 'right', y: 380, text: '📲 QR Code\n到場出示即可入場' },
+    ],
+    isLast: true,
+    build: () => [
+      usr('（LINE Pay 付款完成）'),
+      bot('🎉 報名成功！您的電子憑證：'),
+      cardWrap(voucherCard()),
+    ],
+  },
+];
+
+let cur = 0;
+
+/* ─── HTML builders ─── */
+function divider(t) {
+  return `<div class="date-div fadein">${t}</div>`;
+}
+function bot(t) {
+  return `<div class="msg-row bot fadein">
+    <div class="b-avatar">⛳</div>
+    <div class="bubble bot">${t.replace(/\n/g,'<br>')}</div>
+  </div>`;
+}
+function usr(t) {
+  return `<div class="msg-row user fadein"><div class="bubble user">${t}</div></div>`;
+}
+function cardWrap(inner) {
+  return `<div class="card-wrap fadein"><div class="card-sp"></div>${inner}</div>`;
+}
+
+function welcomeCouponCard() {
+  return `<div class="voucher" style="max-width:200px;">
+    <div class="vc-top" style="background: linear-gradient(135deg, #C9853A, var(--gold)); padding:12px 10px 8px;">
+      <div style="font-size:24px; line-height:1; margin-bottom:3px;">🎁</div>
+      <h3 style="font-size:12px;">歡迎禮折價券</h3>
+      <p style="font-size:8.5px;">新會員專屬</p>
+    </div>
+    <div class="vc-mid" style="text-align:center; padding: 11px 10px;">
+      <div style="font-size:9px; color:var(--text-light); letter-spacing:1px;">擊球費抵用</div>
+      <div style="font-size:28px; font-weight:800; color:var(--green-mid); margin:1px 0; letter-spacing:-0.5px;">NT$300</div>
+      <div style="font-size:9px; color:var(--text-mid);">有效期 2026/06/30 前</div>
+    </div>
+    <div class="vc-foot">
+      <p>下次到場出示 LINE 條碼</p>
+      <strong>立即可用</strong>
+    </div>
+  </div>`;
+}
+
+function couponListCard() {
+  return `<div class="flex-card" style="max-width:230px;">
+    <div class="fc-head" style="background: var(--gold); color: var(--green-dark);">
+      <span>🎟️</span><span>我的折價券（3 張可用）</span>
+    </div>
+    <div class="fc-body" style="padding: 6px 10px;">
+      <div class="cp-row featured">
+        <div class="cp-left">
+          <div class="cp-amt">$300</div>
+          <div class="cp-tag" style="color:#B8860B;">歡迎禮</div>
+        </div>
+        <div class="cp-info">
+          <div class="cp-name">新會員開戶券</div>
+          <div class="cp-exp">至 06/30 · 擊球費抵扣</div>
+        </div>
+      </div>
+      <div class="cp-row">
+        <div class="cp-left">
+          <div class="cp-amt">$500</div>
+          <div class="cp-tag" style="color:#B85C10;">節慶</div>
+        </div>
+        <div class="cp-info">
+          <div class="cp-name">母親節限定券</div>
+          <div class="cp-exp">至 05/15 · 假日適用</div>
+        </div>
+      </div>
+      <div class="cp-row">
+        <div class="cp-left">
+          <div class="cp-amt" style="font-size:11px;">兌換</div>
+          <div class="cp-tag" style="color:var(--green-mid);">平日</div>
+        </div>
+        <div class="cp-info">
+          <div class="cp-name">下午茶兌換券</div>
+          <div class="cp-exp">至 05/31 · 平日下午限定</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function couponDetailCard() {
+  return `<div class="voucher">
+    <div class="vc-top">
+      <div class="vc-check">🎟️</div>
+      <h3>新會員開戶券</h3>
+      <p>歡迎禮 · 立即可用</p>
+    </div>
+    <div class="vc-mid">
+      <div class="vc-row"><span class="k">面額</span><span class="v" style="color:var(--green-mid);font-weight:700;">NT$300</span></div>
+      <div class="vc-row"><span class="k">使用條件</span><span class="v">擊球費抵扣</span></div>
+      <div class="vc-row"><span class="k">有效期</span><span class="v">2026/06/30 前</span></div>
+      <div class="vc-row"><span class="k">使用次數</span><span class="v">1 次</span></div>
+      <div class="vc-row"><span class="k">券號</span><span class="v" style="font-family:monospace;font-size:9px;">SV-WL-2604-0273</span></div>
+    </div>
+    <div class="vc-qr">
+      <svg width="72" height="72" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
+        <rect width="21" height="21" fill="white"/>
+        <rect x="1" y="1" width="7" height="7" fill="none" stroke="#1A1A1A" stroke-width="1"/>
+        <rect x="3" y="3" width="3" height="3" fill="#1A1A1A"/>
+        <rect x="13" y="1" width="7" height="7" fill="none" stroke="#1A1A1A" stroke-width="1"/>
+        <rect x="15" y="3" width="3" height="3" fill="#1A1A1A"/>
+        <rect x="1" y="13" width="7" height="7" fill="none" stroke="#1A1A1A" stroke-width="1"/>
+        <rect x="3" y="15" width="3" height="3" fill="#1A1A1A"/>
+        <rect x="9" y="2" width="2" height="1" fill="#1A1A1A"/>
+        <rect x="11" y="4" width="1" height="1" fill="#1A1A1A"/>
+        <rect x="9" y="5" width="2" height="1" fill="#1A1A1A"/>
+        <rect x="11" y="7" width="1" height="1" fill="#1A1A1A"/>
+        <rect x="9" y="9" width="1" height="2" fill="#1A1A1A"/>
+        <rect x="11" y="9" width="2" height="1" fill="#1A1A1A"/>
+        <rect x="13" y="9" width="2" height="1" fill="#1A1A1A"/>
+        <rect x="17" y="9" width="2" height="1" fill="#1A1A1A"/>
+        <rect x="1" y="9" width="2" height="1" fill="#1A1A1A"/>
+        <rect x="5" y="9" width="1" height="1" fill="#1A1A1A"/>
+        <rect x="1" y="11" width="4" height="1" fill="#1A1A1A"/>
+        <rect x="9" y="11" width="2" height="1" fill="#1A1A1A"/>
+        <rect x="13" y="11" width="1" height="1" fill="#1A1A1A"/>
+        <rect x="15" y="11" width="3" height="1" fill="#1A1A1A"/>
+        <rect x="9" y="13" width="1" height="1" fill="#1A1A1A"/>
+        <rect x="11" y="13" width="2" height="1" fill="#1A1A1A"/>
+        <rect x="15" y="13" width="2" height="1" fill="#1A1A1A"/>
+        <rect x="19" y="13" width="1" height="1" fill="#1A1A1A"/>
+        <rect x="9" y="15" width="3" height="1" fill="#1A1A1A"/>
+        <rect x="17" y="15" width="3" height="1" fill="#1A1A1A"/>
+        <rect x="9" y="17" width="1" height="1" fill="#1A1A1A"/>
+        <rect x="13" y="17" width="2" height="1" fill="#1A1A1A"/>
+        <rect x="17" y="17" width="1" height="1" fill="#1A1A1A"/>
+        <rect x="9" y="19" width="2" height="1" fill="#1A1A1A"/>
+        <rect x="13" y="19" width="3" height="1" fill="#1A1A1A"/>
+        <rect x="19" y="19" width="1" height="1" fill="#1A1A1A"/>
+      </svg>
+      <p>到場給櫃台掃描</p>
+    </div>
+    <div class="vc-foot">
+      <p>旭陽高爾夫球場</p>
+      <strong>03-5476-568</strong>
+    </div>
+  </div>`;
+}
+
+function calendarCard() {
+  // 2026年5月：1日為週五。每筆 [day, am組數, pm組數, flag?]；null = 空白格
+  const cells = [
+    null,null,null,null,null,
+    [1,3,2],[2,2,1,'tgt'],
+    [3,1,1],[4,2,0],[5,1,0],[6,2,1],[7,0,1],[8,1,2],[9,3,0],
+    [10,2,1],[11,1,0],[12,0,0],[13,2,0],[14,1,1],[15,2,1],[16,2,1],
+    [17,1,1],[18,1,0],[19,0,0],[20,1,0],[21,2,0],[22,1,1],[23,2,1],
+    [24,1,0],[25,0,0],[26,0,0],[27,1,0],[28,2,1],[29,1,0],[30,2,1],
+    [31,1,1],null,null,null,null,null,null,
+  ];
+  const cellHtml = cells.map((c,i) => {
+    if (!c) return '<div class="cal-day empty"></div>';
+    const [d, am, pm, flag] = c;
+    const dow = i % 7;
+    const we = (dow === 0 || dow === 6) ? ' we' : '';
+    const tgt = flag === 'tgt' ? ' target' : '';
+    const has = (am > 0 || pm > 0) ? ' has' : '';
+    let slot;
+    if (am > 0 && pm > 0) slot = `<span class="d-slots">早${am} 午${pm}</span>`;
+    else if (am > 0)     slot = `<span class="d-slots">早${am}</span>`;
+    else if (pm > 0)     slot = `<span class="d-slots">午${pm}</span>`;
+    else                 slot = '<span class="d-none">—</span>';
+    const click = (am > 0 || pm > 0) ? 'onclick="nextStep()"' : '';
+    return `<button class="cal-day${we}${has}${tgt}" ${click}><span class="d-num">${d}</span>${slot}</button>`;
+  }).join('');
+  return `<div class="cal-card">
+    <div class="cal-head">
+      <span class="cal-nav">‹</span>
+      <span class="cal-month">2026 年 5 月</span>
+      <span class="cal-nav">›</span>
+    </div>
+    <div class="cal-weekdays">
+      <span class="we">日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span class="we">六</span>
+    </div>
+    <div class="cal-grid">${cellHtml}</div>
+    <div class="cal-foot">點選日期查看時段（早 = 早球組數 · 午 = 午球組數）</div>
+  </div>`;
+}
+
+function formCard() {
+  const sel = (n) => formState.pax === n ? ' sel' : '';
+  return `<div class="form-card">
+    <div class="form-head">
+      <p>⛳ 5月2日早場報名</p>
+      <small>07:00 開球 · 18洞標準賽</small>
+    </div>
+    <div class="form-body">
+      <div>
+        <div class="f-label">姓名</div>
+        <input class="f-input" type="text" value="${formState.name}" oninput="updateForm('name', this.value)" placeholder="請填寫您的姓名" />
+      </div>
+      <div>
+        <div class="f-label">聯繫電話</div>
+        <input class="f-input" type="tel" value="${formState.phone}" oninput="updateForm('phone', this.value)" placeholder="0912-345-678" />
+      </div>
+      <div>
+        <div class="f-label">報名人數</div>
+        <div class="pax-row">
+          <button class="pax-btn${sel(1)}" onclick="setPax(1,this)">1</button>
+          <button class="pax-btn${sel(2)}" onclick="setPax(2,this)">2</button>
+          <button class="pax-btn${sel(3)}" onclick="setPax(3,this)">3</button>
+          <button class="pax-btn${sel(4)}" onclick="setPax(4,this)">4</button>
+        </div>
+      </div>
+      <div class="deposit-preview">1 組訂金（含最多 4 人）：<strong>NT$2,000</strong></div>
+      <button class="fc-cta" onclick="nextStep()">確認報名</button>
+    </div>
+  </div>`;
+}
+
+function setPax(n, el) {
+  formState.pax = n;
+  document.querySelectorAll('.pax-btn').forEach(b => b.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function updateForm(field, val) {
+  formState[field] = val;
+}
+
+function depositCard() {
+  return `<div class="dep-card">
+    <div class="dep-head"><span>💳</span><p>訂金付款確認</p></div>
+    <div class="dep-body">
+      <div class="dep-row"><span class="k">場次</span><span class="v">5/2（六）早場 18洞</span></div>
+      <div class="dep-row"><span class="k">報名人數</span><span class="v">${formState.pax} 人（1 組）</span></div>
+      <div class="dep-row"><span class="k">訂金</span><span class="v">NT$2,000 / 組</span></div>
+      <div class="dep-row"><span class="k">抵扣方式</span><span class="v" style="color:var(--green-mid);">✓ 到場抵擊球費</span></div>
+      <div class="dep-total">
+        <span class="tl">應付訂金</span>
+        <span class="ta">NT$2,000</span>
+      </div>
+      <div class="cancel-note">⚠️ 訂金到場抵擊球費 · 折價券可同步抵扣 · 取消請於開打前 3 天聯絡球場</div>
+      <button class="lp-btn" onclick="nextStep()">
+        <span class="lp-logo">LINE Pay</span> 立即付款
+      </button>
+    </div>
+  </div>`;
+}
+
+function voucherCard() {
+  return `<div class="voucher">
+    <div class="vc-top">
+      <div class="vc-check">✓</div>
+      <h3>報名成功！</h3>
+      <p>旭陽高爾夫球場</p>
+    </div>
+    <div class="vc-mid">
+      <div class="vc-row"><span class="k">場次</span><span class="v">5/2（六）早場 07:00</span></div>
+      <div class="vc-row"><span class="k">球道</span><span class="v">18洞標準賽</span></div>
+      <div class="vc-row"><span class="k">球友</span><span class="v">${formState.name}</span></div>
+      <div class="vc-row"><span class="k">聯繫電話</span><span class="v">${formState.phone}</span></div>
+      <div class="vc-row"><span class="k">人數</span><span class="v">${formState.pax} 人</span></div>
+      <div class="vc-row"><span class="k">已付訂金</span><span class="v" style="color:var(--green-mid);">NT$2,000</span></div>
+      <div class="vc-row"><span class="k">訂單編號</span><span class="v" style="font-family:monospace;font-size:9px;">SG260502-0042</span></div>
+    </div>
+    <div class="vc-qr">
+      <svg width="72" height="72" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
+        <rect width="21" height="21" fill="white"/>
+        <rect x="1" y="1" width="7" height="7" fill="none" stroke="#1A1A1A" stroke-width="1"/>
+        <rect x="3" y="3" width="3" height="3" fill="#1A1A1A"/>
+        <rect x="13" y="1" width="7" height="7" fill="none" stroke="#1A1A1A" stroke-width="1"/>
+        <rect x="15" y="3" width="3" height="3" fill="#1A1A1A"/>
+        <rect x="1" y="13" width="7" height="7" fill="none" stroke="#1A1A1A" stroke-width="1"/>
+        <rect x="3" y="15" width="3" height="3" fill="#1A1A1A"/>
+        <rect x="9" y="1" width="1" height="1" fill="#1A1A1A"/>
+        <rect x="11" y="2" width="1" height="1" fill="#1A1A1A"/>
+        <rect x="9" y="3" width="2" height="1" fill="#1A1A1A"/>
+        <rect x="11" y="5" width="1" height="1" fill="#1A1A1A"/>
+        <rect x="9" y="7" width="1" height="2" fill="#1A1A1A"/>
+        <rect x="11" y="8" width="2" height="1" fill="#1A1A1A"/>
+        <rect x="1" y="9" width="2" height="1" fill="#1A1A1A"/>
+        <rect x="5" y="9" width="1" height="1" fill="#1A1A1A"/>
+        <rect x="9" y="9" width="2" height="1" fill="#1A1A1A"/>
+        <rect x="13" y="9" width="2" height="1" fill="#1A1A1A"/>
+        <rect x="17" y="9" width="2" height="1" fill="#1A1A1A"/>
+        <rect x="1" y="11" width="4" height="1" fill="#1A1A1A"/>
+        <rect x="9" y="11" width="2" height="1" fill="#1A1A1A"/>
+        <rect x="13" y="11" width="1" height="1" fill="#1A1A1A"/>
+        <rect x="15" y="11" width="3" height="1" fill="#1A1A1A"/>
+        <rect x="9" y="13" width="1" height="1" fill="#1A1A1A"/>
+        <rect x="11" y="13" width="2" height="1" fill="#1A1A1A"/>
+        <rect x="15" y="13" width="2" height="1" fill="#1A1A1A"/>
+        <rect x="19" y="13" width="1" height="1" fill="#1A1A1A"/>
+        <rect x="9" y="15" width="3" height="1" fill="#1A1A1A"/>
+        <rect x="17" y="15" width="3" height="1" fill="#1A1A1A"/>
+        <rect x="9" y="17" width="1" height="1" fill="#1A1A1A"/>
+        <rect x="13" y="17" width="2" height="1" fill="#1A1A1A"/>
+        <rect x="17" y="17" width="1" height="1" fill="#1A1A1A"/>
+        <rect x="9" y="19" width="2" height="1" fill="#1A1A1A"/>
+        <rect x="13" y="19" width="3" height="1" fill="#1A1A1A"/>
+        <rect x="19" y="19" width="1" height="1" fill="#1A1A1A"/>
+      </svg>
+      <p>到場出示此 QR Code 完成核銷</p>
+    </div>
+    <div class="vc-foot">
+      <p>新竹縣關西鎮南新里新城段100號</p>
+      <strong>03-5476-568</strong>
+    </div>
+  </div>`;
+}
+
+/* ─── Render step ─── */
+function renderStep() {
+  const s = steps[cur];
+  document.getElementById('chat').innerHTML = s.build().join('');
+
+  // Rich menu highlight
+  document.querySelectorAll('.rm-btn').forEach(b => b.classList.remove('hl'));
+  if (s.hl) {
+    const btn = document.getElementById('rm-' + s.hl);
+    if (btn) btn.classList.add('hl');
+  }
+
+  // Narration
+  document.getElementById('narr-title').textContent = s.narr.title;
+  document.getElementById('narr-desc').textContent = s.narr.desc;
+  const ctaBtn = document.getElementById('narr-cta');
+  if (s.narr.cta) {
+    ctaBtn.textContent = s.narr.cta;
+    ctaBtn.classList.remove('hidden');
+  } else {
+    ctaBtn.classList.add('hidden');
+  }
+
+  // Dots
+  document.getElementById('dots').innerHTML = steps.map((_,i) =>
+    `<div class="dot ${i===cur?'active':i<cur?'done':''}"></div>`
+  ).join('');
+
+  // Nav
+  const prevBtn = document.getElementById('prev-btn');
+  const nextBtn = document.getElementById('next-btn');
+  prevBtn.style.visibility = cur === 0 ? 'hidden' : 'visible';
+  nextBtn.style.visibility = s.isLast ? 'hidden' : 'visible';
+
+  if (!s.isLast) {
+    nextBtn.textContent = s.next || '繼續 →';
+    nextBtn.onclick = nextStep;
+  }
+
+  // Annotations
+  renderCallouts(s.annotations, 'callouts-left', 'callouts-right');
+}
+
+function nextStep() { if (cur < steps.length - 1) { cur++; renderStep(); } }
+function prevStep() { if (cur > 0) { cur--; renderStep(); } }
+function rmTap(t) { if (t === 'coupons' || t === 'sessions') nextStep(); }
+
+/* ─── Annotation callouts ─── */
+function renderCallouts(annotations, leftId, rightId) {
+  const left  = (annotations || []).filter(a => a.side === 'left');
+  const right = (annotations || []).filter(a => a.side !== 'left');
+  const buildHtml = arr => arr.map(a =>
+    `<div class="callout" style="top:${a.y}px;">${a.text}</div>`
+  ).join('');
+  const lEl = document.getElementById(leftId);
+  const rEl = document.getElementById(rightId);
+  if (lEl) lEl.innerHTML = buildHtml(left);
+  if (rEl) rEl.innerHTML = buildHtml(right);
+}
+
+/* ─── Init ─── */
+renderStep();
+</script>
+</body>
+</html>
